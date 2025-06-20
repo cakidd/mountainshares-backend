@@ -108,17 +108,30 @@ app.post('/api/create-checkout-session', async (req, res) => {
 
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
-            line_items: [{
-                price_data: {
-                    currency: currency,
-                    product_data: {
-                        name: 'MountainShares',
-                        description: `${amount} MountainShares tokens + $${loadingFee.toFixed(2)} loading fee (Total: $${subtotal.toFixed(2)}) for Mount Hope, WV`,
+            line_items: [
+                {
+                    price_data: {
+                        currency: currency,
+                        unit_amount: Math.round(subtotal * 100),
+                        product_data: {
+                            name: 'MountainShares Tokens',
+                            description: `${amount} tokens + $${loadingFee.toFixed(2)} loading fee`,
+                        },
                     },
-                    unit_amount: totalCents,
+                    quantity: 1,
                 },
-                quantity: 1,
-            }],
+                {
+                    price_data: {
+                        currency: currency,
+                        unit_amount: Math.round(stripeFee * 100),
+                        product_data: {
+                            name: 'Processing Fee',
+                            description: 'Card processing fee',
+                        },
+                    },
+                    quantity: 1,
+                }
+            ],
             mode: 'payment',
             success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: process.env.FRONTEND_URL,
