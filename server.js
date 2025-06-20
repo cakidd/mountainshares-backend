@@ -24,11 +24,17 @@ app.use(function(req, res, next) {
 });
 
 // Security middleware
-app.use(helmet({
-    crossOriginEmbedderPolicy: false,
-    contentSecurityPolicy: false
-}));
-app.use(morgan('combined'));
+app.use((req, res, next) => {
+  res.setHeader('Access-Control-Allow-Origin', 'https://sensational-blancmange-048bc5.netlify.app');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  next();
+});
+
 
 // Webhook endpoint FIRST (before express.json())
 app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
