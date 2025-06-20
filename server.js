@@ -10,28 +10,23 @@ const { ethers } = require('ethers');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Security middleware
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://sensational-blancmange-048bc5.netlify.app',
     'http://localhost:3000'
   ];
-  
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
   }
-  
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
-  
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
-
 
 
 // Webhook endpoint FIRST (before express.json())
