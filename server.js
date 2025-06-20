@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 // UPDATED CORS configuration for your Netlify frontend
 app.use(cors({
     origin: [
-        'https://peppy-squirrel-5e98bc.netlify.app',
+        'https://sensational-blancmange-048bc5.netlify.app',
         'https://6854aa939e5549c6ad6d363d--frolicking-crisp-0b1d43.netlify.app',
         'https://frolicking-crisp-0b1d43.netlify.app',
         'http://localhost:3000',
@@ -123,8 +123,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 quantity: 1,
             }],
             mode: 'payment',
-            success_url: `https://peppy-squirrel-5e98bc.netlify.app/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `https://peppy-squirrel-5e98bc.netlify.app`,
+            success_url: `https://sensational-blancmange-048bc5.netlify.app/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `https://sensational-blancmange-048bc5.netlify.app`,
             metadata: {
                 walletAddress: walletAddress,
                 tokenAmount: amount.toString(),
