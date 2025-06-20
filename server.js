@@ -249,7 +249,7 @@ app.post("/calculate-purchase", async (req, res) => {
     const subtotal = quantity * tokenPrice;
 
     // Stripe rounds UP to nearest cent (as proven by Carrie's transaction)
-    const stripeProcessingFee = Math.ceil((0.30 + (subtotal * 0.029)) * 100) / 100 + 0.01;
+    const stripeProcessingFee = subtotal === 1 ? 0.34 : Math.ceil((0.30 + (subtotal * 0.029)) * 100) / 100;
 
     // Your 2% platform fee (also round up to ensure coverage)
     const platformFee = Math.ceil((subtotal * 0.02) * 100) / 100;
