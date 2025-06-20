@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 // UPDATED CORS configuration for your Netlify frontend
 app.use(cors({
     origin: [
-        'https://peppy-squirrel-5e98bc.netlify.app',  // ADD THIS LINE
+        'https://peppy-squirrel-5e98bc.netlify.app',
         'https://6854aa939e5549c6ad6d363d--frolicking-crisp-0b1d43.netlify.app',
         'https://frolicking-crisp-0b1d43.netlify.app',
         'http://localhost:3000',
