@@ -104,7 +104,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         const subtotal = amount + loadingFee;
         const totalCents = Math.round(total * 100);
 
-        console.log(`💳 Creating checkout: $${amount} + $${loadingFee.toFixed(2)} fee = $${subtotal.toFixed(2)}`);
+        console.log(`💳 Creating checkout: $${amount} + $${loadingFee.toFixed(2)} loading fee + $${stripeFee.toFixed(2)} processing fee = $${(subtotal + stripeFee).toFixed(2)}`);
         console.log(`🔍 Debug - subtotal: $${subtotal}, stripeFee: $${stripeFee}`);
         console.log(`🔍 Line item 1 amount: ${Math.round(subtotal * 100)} cents`);
         console.log(`🔍 Line item 2 amount: ${Math.round(stripeFee * 100)} cents`);
