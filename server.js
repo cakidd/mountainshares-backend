@@ -3,15 +3,6 @@ require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
-app.use(cors({
-  origin: [
-    'https://peppy-squirrel-5e98bc.netlify.app',
-    'http://localhost:3000'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { ethers } = require('ethers');
@@ -22,6 +13,7 @@ const PORT = process.env.PORT || 3001;
 // UPDATED CORS configuration for your Netlify frontend
 app.use(cors({
     origin: [
+        'https://peppy-squirrel-5e98bc.netlify.app',  // ADD THIS LINE
         'https://6854aa939e5549c6ad6d363d--frolicking-crisp-0b1d43.netlify.app',
         'https://frolicking-crisp-0b1d43.netlify.app',
         'http://localhost:3000',
