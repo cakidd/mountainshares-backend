@@ -11,18 +11,29 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // UPDATED CORS configuration for your Netlify frontend
-app.use(cors({
-    origin: [
+app.use((req, res, next) => {
+    const allowedOrigins = [
         'https://sensational-blancmange-048bc5.netlify.app',
         'https://6854aa939e5549c6ad6d363d--frolicking-crisp-0b1d43.netlify.app',
-        'https://frolicking-crisp-0b1d43.netlify.app',
-        'http://localhost:3000',
-        'https://localhost:3000'
-    ],
-    credentials: true,
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-}));
+        'http://localhost:3000'
+    ];
+
+    const origin = req.headers.origin;
+    if (allowedOrigins.includes(origin)) {
+        res.header('Access-Control-Allow-Origin', origin);
+    }
+
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+
+    next();
+});
+
 
 // Security middleware
 app.use(helmet({
