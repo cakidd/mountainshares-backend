@@ -10,19 +10,6 @@ const { ethers } = require('ethers');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// UPDATED CORS configuration for your Netlify frontend
-app.use(function(req, res, next) {
-   res.header("Access-Control-Allow-Origin", "https://sensational-blancmange-048bc5.netlify.app, http://localhost:3000");
-   res.header('Access-Control-Allow-Methods', 'DELETE, PUT, GET, POST, OPTIONS');
-   res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-   res.header("Access-Control-Allow-Credentials", "true");
-   
-   if (req.method === 'OPTIONS') {
-       return res.sendStatus(200);
-   }
-   next();
-});
-
 // Security middleware
 app.use((req, res, next) => {
   const allowedOrigins = [
@@ -96,11 +83,6 @@ app.options('*', cors());
 
 // Create Stripe checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://sensational-blancmange-048bc5.netlify.app');
-    res.header('Access-Control-Allow-Credentials', 'true');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
     try {
         console.log('📝 Checkout request received from:', req.headers.origin);
         console.log('📝 Request body:', req.body);
