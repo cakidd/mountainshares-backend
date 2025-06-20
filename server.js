@@ -99,9 +99,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
         }
 
         const loadingFee = amount * 0.02;
-        const subtotal = amount + loadingFee;
         const stripeFee = (subtotal * 0.029) + 0.30;
         const total = subtotal + stripeFee;
+        const subtotal = amount + loadingFee;
         const totalCents = Math.round(total * 100);
 
         console.log(`💳 Creating checkout: $${amount} + $${loadingFee.toFixed(2)} loading fee + $${stripeFee.toFixed(2)} processing fee = $${(subtotal + stripeFee).toFixed(2)}`);
