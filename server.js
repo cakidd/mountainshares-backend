@@ -282,3 +282,30 @@ app.listen(PORT, () => {
 module.exports = app;
 // Force rebuild Fri Jun 20 00:15:08 EDT 2025
 // Force rebuild 1750394781
+app.post('/create-checkout-session', async (req, res) => {
+  try {
+    const { quantity, walletAddress } = req.body;
+    
+    // Create Stripe session
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: 'MountainShares Tokens',
+          },
+          unit_amount: Math.round(quantity * 1.36 * 100), // $1.36 per token
+        },
+        quantity: 1,
+      }],
+      mode: 'payment',
+      success_url: `https://your-frontend.com/success?session_id={CHECKOUT_SESSION_ID}&wallet=${walletAddress}`,
+      cancel_url: 'https://your-frontend.com/cancel',
+    });
+
+    res.json({ id: session.id });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
