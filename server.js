@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3001;
 
 // UPDATED CORS configuration for your Netlify frontend
 app.use(function(req, res, next) {
-   res.header("Access-Control-Allow-Origin", "https://sensational-blancmange-048bc5.netlify.app");
+   res.header("Access-Control-Allow-Origin", "https://sensational-blancmange-048bc5.netlify.app, http://localhost:3000");
    res.header('Access-Control-Allow-Methods', 'DELETE, PUT, GET, POST, OPTIONS');
    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
    res.header("Access-Control-Allow-Credentials", "true");
@@ -25,15 +25,26 @@ app.use(function(req, res, next) {
 
 // Security middleware
 app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', 'https://sensational-blancmange-048bc5.netlify.app');
+  const allowedOrigins = [
+    'https://sensational-blancmange-048bc5.netlify.app',
+    'http://localhost:3000'
+  ];
+  
+  const origin = req.headers.origin;
+  if (allowedOrigins.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin');
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   
   if (req.method === 'OPTIONS') {
     return res.sendStatus(200);
   }
   next();
 });
+
 
 
 // Webhook endpoint FIRST (before express.json())
