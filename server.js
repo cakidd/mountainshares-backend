@@ -79,6 +79,11 @@ app.options('*', cors());
 
 // Create Stripe checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'https://sensational-blancmange-048bc5.netlify.app');
+    res.header('Access-Control-Allow-Credentials', 'true');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
     try {
         console.log('📝 Checkout request received from:', req.headers.origin);
         console.log('📝 Request body:', req.body);
