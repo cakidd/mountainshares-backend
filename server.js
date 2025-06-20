@@ -271,6 +271,28 @@ app.post("/calculate-purchase", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+app.post("/create-checkout-session", async (req, res) => { 
+  try { 
+    const { quantity, walletAddress } = req.body; 
+    const session = await stripe.checkout.sessions.create({ 
+      payment_method_types: ["card"], 
+      line_items: [{ 
+        price_data: { 
+          currency: "usd", 
+          product_data: { name: "MountainShares Tokens" }, 
+          unit_amount: Math.round(quantity * 1.36 * 100), 
+        }, 
+        quantity: 1, 
+      }], 
+      mode: "payment", 
+      success_url: `https://sensational-blancmange-048bc5.netlify.app/success?session_id={CHECKOUT_SESSION_ID}&wallet=${walletAddress}`, 
+      cancel_url: "https://sensational-blancmange-048bc5.netlify.app/cancel", 
+    }); 
+    res.json({ id: session.id }); 
+  } catch (error) { 
+    res.status(500).json({ error: error.message }); 
+  } 
+});
 app.listen(PORT, () => {
     console.log('🚀 MountainShares Production Backend');
     console.log(`📡 Server: http://localhost:${PORT}`);
