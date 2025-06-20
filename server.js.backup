@@ -2,29 +2,6 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
-// Add CORS before your routes
-app.use(cors({
-  origin: [
-    'https://peppy-squirrel-5e98bc.netlify.app',
-    'http://localhost:3000'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
-}));
-
-// Add the missing route
-app.post('/api/create-checkout-session', async (req, res) => {
-  try {
-    // Your Stripe checkout logic here
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-const cors = require('cors');
-
 const app = express();
 const PORT = process.env.PORT || 3001;
 

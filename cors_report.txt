@@ -1,0 +1,6 @@
+CORS Issue Report for Railway App
+Frontend: https://peppy-squirrel-5e98bc.netlify.app
+Backend: https://mountainshares-production.up.railway.app
+Required CORS Origin: https://peppy-squirrel-5e98bc.netlify.app
+Error: No 'Access-Control-Allow-Origin' header present
+Thu Jun 19 23:17:19 EDT 2025
