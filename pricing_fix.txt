@@ -1,0 +1,5 @@
+        const loadingFee = amount * 0.02;
+        const subtotal = amount + loadingFee;
+        const stripeFee = (subtotal * 0.029) + 0.30;
+        const total = subtotal + stripeFee;
+        const totalCents = Math.round(total * 100);
