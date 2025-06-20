@@ -99,10 +99,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
         }
 
         const loadingFee = amount * 0.02;
-        const stripeFee = (subtotal * 0.029) + 0.30;
-        const total = subtotal + stripeFee;
         const subtotal = amount + loadingFee;
-        const totalCents = Math.round(total * 100);
+        const totalCents = Math.round(subtotal * 100);
 
         console.log(`💳 Creating checkout: $${amount} + $${loadingFee.toFixed(2)} fee = $${subtotal.toFixed(2)}`);
 
@@ -126,7 +124,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 walletAddress: walletAddress,
                 tokenAmount: amount.toString(),
                 loadingFee: loadingFee.toString(),
-                stripeFee: stripeFee.toString(),
                 timestamp: new Date().toISOString()
             },
             billing_address_collection: 'required',
