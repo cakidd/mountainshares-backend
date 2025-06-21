@@ -3,11 +3,11 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration for your Netlify domain (based on Stack Overflow solution[3])
+// CORS configuration with your NEW Netlify domain
 const corsOptions = {
   origin: [
+    'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app',
     'https://relaxed-medovik-06c531.netlify.app',
-    'https://68571eab2182a306ff7359d9--relaxed-medovik-06c531.netlify.app',
     'http://localhost:3000'
   ],
   credentials: true,
@@ -16,10 +16,10 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Apply CORS middleware FIRST
+// Apply CORS middleware
 app.use(cors(corsOptions));
 
-// Add explicit CORS headers for all responses (CORS debugging solution[5])
+// Add explicit CORS headers for all responses
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (corsOptions.origin.includes(origin)) {
@@ -29,7 +29,6 @@ app.use((req, res, next) => {
   res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
   res.header('Access-Control-Allow-Credentials', 'true');
   
-  // Handle preflight requests (CORS flow solution[5])
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -45,12 +44,11 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'mountainshares-backend',
-    cors: 'enabled',
-    stripe: 'ready'
+    cors: 'enabled'
   });
 });
 
-// Create checkout session endpoint for MountainShares purchases
+// Create checkout session endpoint
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
@@ -62,22 +60,19 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Calculate pricing with 0.0111% regional banking fee
     const tokenValue = quantity * 1.00;
     const stripeBaseFee = (tokenValue * 0.029) + 0.30;
-    const stripeRegionalFee = tokenValue * 0.000111; // 0.0111% regional banking fee
+    const stripeRegionalFee = tokenValue * 0.000111;
     const totalStripeFee = Math.ceil((stripeBaseFee + stripeRegionalFee) * 100) / 100;
     const msFee = Math.ceil((tokenValue * 0.02) * 100) / 100;
     const totalAmount = tokenValue + totalStripeFee + msFee;
     
-    // Create MountainShares payment session
     const sessionId = 'cs_' + Math.random().toString(36).substr(2, 9);
     const orderId = 'order_' + Math.random().toString(36).substr(2, 9);
-    
-    console.log('✅ MountainShares checkout session created:', sessionId);
     
     res.json({
       success: true,
       id: sessionId,
       orderId: orderId,
-      amount: Math.round(totalAmount * 100), // Amount in cents for Stripe
+      amount: Math.round(totalAmount * 100),
       quantity: quantity,
       walletAddress: walletAddress,
       pricing: {
@@ -89,7 +84,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('❌ Checkout session failed:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -97,8 +91,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
-  console.log(`🔧 CORS enabled with Access-Control-Allow-Origin header`);
-  console.log(`💰 Regional banking fee (0.0111%) included in calculations`);
-  console.log(`💳 Stripe payment system ready for MountainShares purchases`);
+  console.log(`🔧 CORS enabled for NEW Netlify domain`);
+  console.log(`💰 Regional banking fee (0.0111%) included`);
   console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
