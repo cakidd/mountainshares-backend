@@ -10,19 +10,9 @@ const { ethers } = require('ethers');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// CORS Configuration - WORKING VERSION
+// CORS - Temporary wildcard fix
 app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  const allowedOrigins = [
-    'https://mountainshares-vercel-deploy-riii.vercel.app',
-    'https://sensational-blancmange-048bc5.netlify.app',
-    'http://localhost:3000'
-  ];
-  
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  
+  res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
@@ -31,6 +21,10 @@ app.use((req, res, next) => {
     res.sendStatus(200);
     return;
   }
+  
+  next();
+});
+
 // Webhook endpoint FIRST (before express.json())
 app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
     const sig = req.headers['stripe-signature'];
