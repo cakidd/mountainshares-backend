@@ -3,7 +3,7 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration with the missing Access-Control-Allow-Origin header
+// CORS configuration for your specific Netlify domains
 const corsOptions = {
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
@@ -19,7 +19,7 @@ const corsOptions = {
 // Apply CORS middleware FIRST
 app.use(cors(corsOptions));
 
-// Add explicit middleware for missing header (Railway Help Station solution)
+// Add explicit middleware for Access-Control-Allow-Origin header
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (corsOptions.origin.includes(origin)) {
@@ -82,6 +82,45 @@ app.post('/api/create-checkout-session', async (req, res) => {
         totalCharge: totalAmount
       }
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Calculate purchase endpoint with regional banking fee
+app.post('/api/calculate-purchase', (req, res) => {
+  try {
+    const { msTokens } = req.body;
+    
+    if (!msTokens || msTokens < 1) {
+      return res.status(400).json({ error: 'Invalid token amount' });
+    }
+    
+    const tokenValue = msTokens * 1.00;
+    
+    // Stripe fees: 2.9% + $0.30 + 0.0111% regional banking fee
+    const stripeBaseFee = (tokenValue * 0.029) + 0.30;
+    const stripeRegionalFee = tokenValue * 0.000111; // 0.0111% regional banking fee
+    const totalStripeFee = stripeBaseFee + stripeRegionalFee;
+    
+    // MountainShares fee: 2%
+    const mountainSharesFee = tokenValue * 0.02;
+    
+    // Round up both fees to ensure accurate accounting
+    const stripeFeeFinal = Math.ceil(totalStripeFee * 100) / 100;
+    const mountainSharesFeeFinal = Math.ceil(mountainSharesFee * 100) / 100;
+    
+    const totalCharge = tokenValue + stripeFeeFinal + mountainSharesFeeFinal;
+    
+    const pricing = {
+      tokenValue: tokenValue,
+      stripeFee: stripeFeeFinal,
+      stripeRegionalFee: stripeRegionalFee,
+      mountainSharesFee: mountainSharesFeeFinal,
+      totalCharge: totalCharge
+    };
+    
+    res.json({ success: true, pricing });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
