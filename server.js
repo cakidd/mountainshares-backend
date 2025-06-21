@@ -3,36 +3,23 @@ const cors = require('cors');
 
 const app = express();
 
-// EXACT CORS configuration from Stack Overflow solution
-app.use(cors({
-  origin: [
-    'https://relaxed-medovik-06c531.netlify.app',
-    'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app'
-  ],
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+// CORS configuration using Railway environment variables (NEW APPROACH)
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'https://relaxed-medovik-06c531.netlify.app',
+  credentials: process.env.CORS_CREDENTIALS === 'true',
+  methods: (process.env.CORS_METHODS || 'GET,POST,PUT,DELETE,OPTIONS').split(','),
+  allowedHeaders: (process.env.CORS_HEADERS || 'Content-Type,Authorization,X-Requested-With').split(','),
   optionsSuccessStatus: 200
-}));
+};
 
-// Add manual CORS headers (from YouTube tutorial solution)
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', req.headers.origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests (from Stripe documentation)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
-
+// Apply CORS middleware
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// Create checkout session endpoint - EXACT pattern from YouTube tutorial
+// Handle preflight requests
+app.options('*', cors(corsOptions));
+
+// Create checkout session endpoint - RETURN URL INSTEAD OF REDIRECT
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
@@ -49,21 +36,16 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const msFee = Math.ceil((tokenValue * 0.02) * 100) / 100;
     const totalAmount = tokenValue + totalStripeFee + msFee;
     
-    // Simulate Stripe session creation (from Stack Overflow pattern)
-    const sessionId = 'cs_' + Math.random().toString(36).substr(2, 9);
+    // Simulate Stripe session creation
+    const sessionId = 'cs_test_' + Math.random().toString(36).substr(2, 20);
     const sessionUrl = `https://checkout.stripe.com/c/pay/${sessionId}`;
     
     console.log('✅ MountainShares checkout session created:', sessionId);
+    console.log('🔧 CORS Origin:', process.env.CORS_ORIGIN);
     
-    // RETURN URL FOR CLIENT-SIDE REDIRECT (YouTube tutorial solution)
-    res.json({
-      success: true,
-      id: sessionId,
-      url: sessionUrl,
-      amount: Math.round(totalAmount * 100),
-      quantity: quantity,
-      walletAddress: walletAddress
-    });
+    // RETURN URL FOR CLIENT-SIDE REDIRECT (Stack Overflow solution)
+    res.json({ url: sessionUrl });
+    
   } catch (error) {
     console.error('❌ Checkout session failed:', error);
     res.status(500).json({ error: error.message });
@@ -73,7 +55,9 @@ app.post('/api/create-checkout-session', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
-  console.log(`🔧 CORS enabled with Stack Overflow solution`);
+  console.log(`🔧 CORS Origin: ${process.env.CORS_ORIGIN}`);
+  console.log(`🔧 CORS Methods: ${process.env.CORS_METHODS}`);
+  console.log(`🔧 CORS Headers: ${process.env.CORS_HEADERS}`);
   console.log(`💰 Regional banking fee (0.0111%) included`);
   console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
