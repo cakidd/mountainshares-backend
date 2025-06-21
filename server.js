@@ -58,6 +58,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
 // JSON middleware for API endpoints
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // OPTIONS preflight for CORS
 // app.options('*', cors());
