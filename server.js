@@ -70,7 +70,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 app.use(express.json());
 
 // OPTIONS preflight for CORS
-app.options('*', cors());
+// app.options('*', cors());
 
 // Create Stripe checkout session
 app.post('/api/create-checkout-session', async (req, res) => {
