@@ -3,7 +3,7 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration (Stack Overflow #68630525 solution)
+// CORS configuration for your Netlify domain
 app.use(cors({
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
@@ -11,31 +11,12 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  optionsSuccessStatus: 200
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-
-// Add explicit CORS headers (MDN documentation solution from search results)
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin && ['https://relaxed-medovik-06c531.netlify.app', 'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app'].includes(origin)) {
-    res.header('Access-Control-Allow-Origin', origin);
-  }
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-  res.header('Access-Control-Allow-Credentials', 'true');
-  
-  // Handle preflight requests (YouTube tutorial solution)
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  
-  next();
-});
 
 app.use(express.json());
 
-// Create checkout session endpoint - RETURN URL INSTEAD OF REDIRECT (Stack Overflow #68630525)
+// Create checkout session endpoint - RETURN URL INSTEAD OF REDIRECT (Stack Overflow #68630229)
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
@@ -58,7 +39,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     
     console.log('✅ MountainShares checkout session created:', sessionId);
     
-    // CRITICAL: Return URL instead of redirect (Stack Overflow #68630525 solution)
+    // CRITICAL: Return URL instead of redirect (Stack Overflow #68630229 solution)
     res.json({ url: sessionUrl });
     
   } catch (error) {
@@ -67,10 +48,10 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
-  console.log(`🔧 CORS enabled with Stack Overflow #68630525 solution`);
+  console.log(`🔧 CORS enabled with Stack Overflow #68630229 solution`);
   console.log(`💰 Regional banking fee (0.0111%) included`);
   console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
