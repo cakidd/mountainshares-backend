@@ -3,7 +3,7 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration for form submissions (YouTube tutorial solution)
+// CORS configuration (Stack Overflow #68630525 solution)
 app.use(cors({
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
@@ -11,23 +11,37 @@ app.use(cors({
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 200
 }));
 
-// Parse form data (NEW - for HTML form submissions)
-app.use(express.urlencoded({ extended: true }));
+// Add explicit CORS headers (MDN documentation solution from search results)
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && ['https://relaxed-medovik-06c531.netlify.app', 'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app'].includes(origin)) {
+    res.header('Access-Control-Allow-Origin', origin);
+  }
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests (YouTube tutorial solution)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 app.use(express.json());
 
-// Handle preflight requests
-app.options('*', cors());
-
-// Create checkout session endpoint - HANDLE FORM SUBMISSION (Stack Overflow #68630525)
+// Create checkout session endpoint - RETURN URL INSTEAD OF REDIRECT (Stack Overflow #68630525)
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
     
     if (!quantity || !walletAddress) {
-      return res.status(400).send('Amount and wallet address required');
+      return res.status(400).json({ error: 'Amount and wallet address required' });
     }
     
     // Calculate pricing with 0.0111% regional banking fee
@@ -44,19 +58,19 @@ app.post('/api/create-checkout-session', async (req, res) => {
     
     console.log('✅ MountainShares checkout session created:', sessionId);
     
-    // REDIRECT DIRECTLY (Form submission allows this - YouTube tutorial)
-    res.redirect(303, sessionUrl);
+    // CRITICAL: Return URL instead of redirect (Stack Overflow #68630525 solution)
+    res.json({ url: sessionUrl });
     
   } catch (error) {
     console.error('❌ Checkout session failed:', error);
-    res.status(500).send('Payment session creation failed');
+    res.status(500).json({ error: error.message });
   }
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
-  console.log(`🔧 CORS enabled for HTML form submissions`);
+  console.log(`🔧 CORS enabled with Stack Overflow #68630525 solution`);
   console.log(`💰 Regional banking fee (0.0111%) included`);
-  console.log(`📋 Form submission handler ready`);
+  console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
