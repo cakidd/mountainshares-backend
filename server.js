@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// Enhanced CORS configuration  
 const corsOptions = {
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
@@ -23,19 +24,14 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Accept, Origin, Cache-Control, X-Auth-Token');
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-  next();
-});
-
 app.use(express.json());
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'healthy', cors: 'enhanced-v3' });
+  res.json({ status: 'healthy', cors: 'enhanced-v4-stable' });
+});
+
+app.get('/keep-alive', (req, res) => {
+  res.json({ message: 'Service is awake', timestamp: new Date().toISOString() });
 });
 
 app.post('/api/create-checkout-session', async (req, res) => {
@@ -54,14 +50,21 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const sessionId = 'cs_live_' + Math.random().toString(36).substr(2, 20);
     const sessionUrl = `https://checkout.stripe.com/c/pay/${sessionId}`;
     
+    console.log('✅ Session created:', sessionId);
     res.json({ url: sessionUrl, sessionId });
     
   } catch (error) {
+    console.error('❌ Error:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-app.listen(process.env.PORT || 3000, () => {
-  console.log('✅ Enhanced CORS v3 deployed');
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, () => {
+  console.log(`✅ Enhanced CORS v4 stable - port ${PORT}`);
 });
-// Force redeploy Sat Jun 21 19:49:54 EDT 2025
+
+setInterval(() => {
+  console.log('🔄 Keep-alive:', new Date().toISOString());
+}, 300000);
