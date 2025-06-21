@@ -3,11 +3,11 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration
+// CORS configuration with regional banking fee support
 const corsOptions = {
   origin: [
-    'https://68571eab2182a306ff7359d9--relaxed-medovik-06c531.netlify.app',
     'https://relaxed-medovik-06c531.netlify.app',
+    'https://68571eab2182a306ff7359d9--relaxed-medovik-06c531.netlify.app',
     'http://localhost:3000'
   ],
   credentials: true,
@@ -29,11 +29,12 @@ app.get('/api/health', (req, res) => {
     status: 'healthy',
     timestamp: new Date().toISOString(),
     service: 'mountainshares-backend',
-    cors: 'enabled'
+    cors: 'enabled',
+    regionalBankingFee: '0.0111%'
   });
 });
 
-// Calculate purchase endpoint with regional banking fee
+// Calculate purchase endpoint with 0.0111% regional banking fee
 app.post('/api/calculate-purchase', (req, res) => {
   try {
     const { msTokens } = req.body;
@@ -52,7 +53,7 @@ app.post('/api/calculate-purchase', (req, res) => {
     // MountainShares fee: 2%
     const mountainSharesFee = tokenValue * 0.02;
     
-    // Round up both fees to ensure we always account correctly
+    // Round up both fees to ensure accurate accounting
     const stripeFeeFinal = Math.ceil(totalStripeFee * 100) / 100;
     const mountainSharesFeeFinal = Math.ceil(mountainSharesFee * 100) / 100;
     
@@ -72,7 +73,7 @@ app.post('/api/calculate-purchase', (req, res) => {
   }
 });
 
-// Create checkout session endpoint
+// Create checkout session endpoint with regional banking fee
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
@@ -81,10 +82,10 @@ app.post('/api/create-checkout-session', async (req, res) => {
       return res.status(400).json({ error: 'Amount and wallet address required' });
     }
     
-    // Calculate pricing with regional banking fee
+    // Calculate pricing with 0.0111% regional banking fee
     const tokenValue = quantity * 1.00;
     const stripeBaseFee = (tokenValue * 0.029) + 0.30;
-    const stripeRegionalFee = tokenValue * 0.000111;
+    const stripeRegionalFee = tokenValue * 0.000111; // 0.0111% regional banking fee
     const totalStripeFee = Math.ceil((stripeBaseFee + stripeRegionalFee) * 100) / 100;
     const msFee = Math.ceil((tokenValue * 0.02) * 100) / 100;
     const totalAmount = tokenValue + totalStripeFee + msFee;
@@ -118,4 +119,5 @@ app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
   console.log(`🔧 CORS enabled for Netlify domains`);
   console.log(`💰 Regional banking fee (0.0111%) included in calculations`);
+  console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
