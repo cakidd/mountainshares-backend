@@ -10,25 +10,19 @@ const { ethers } = require('ethers');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// CORS - Allow all origins for now
 app.use((req, res, next) => {
-  const allowedOrigins = [
-    'https://sensational-blancmange-048bc5.netlify.app',
-    'http://localhost:3000',
-  'https://mountainshares-vercel-deploy-riii.vercel.app'
-  ];
-  const origin = req.headers.origin;
-  if (allowedOrigins.includes(origin)) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, PUT, DELETE, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Origin, Cache-Control');
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin,X-Requested-With,Content-Type,Accept,Authorization,Cache-Control,Pragma');
+  
   if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
+    res.sendStatus(200);
+  } else {
+    next();
   }
-  next();
 });
-
 
 // Webhook endpoint FIRST (before express.json())
 app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
