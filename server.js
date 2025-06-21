@@ -11,7 +11,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 // CORS - More robust approach
-app.use(cors({ origin: "*", credentials: true }));
+app.use(cors({ origin: ["*", "https://mountainshares-vercel-deploy-riii-czu0nbd6k-cakidds-projects.vercel.app"], credentials: true }));
   next();
 });
 
