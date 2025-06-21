@@ -3,27 +3,36 @@ const cors = require('cors');
 
 const app = express();
 
-// CORS configuration for your Netlify domain
-const corsOptions = {
+// EXACT CORS configuration from Stack Overflow solution
+app.use(cors({
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
-    'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app',
-    'http://localhost:3000'
+    'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 200
-};
+}));
 
-// Apply CORS middleware
-app.use(cors(corsOptions));
+// Add manual CORS headers (from YouTube tutorial solution)
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', req.headers.origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  res.header('Access-Control-Allow-Credentials', 'true');
+  
+  // Handle preflight requests (from Stripe documentation)
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  next();
+});
+
 app.use(express.json());
 
-// Handle preflight requests
-app.options('*', cors(corsOptions));
-
-// Create checkout session endpoint - RETURN URL INSTEAD OF REDIRECT
+// Create checkout session endpoint - EXACT pattern from YouTube tutorial
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { quantity, walletAddress, amount, productName } = req.body;
@@ -40,17 +49,17 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const msFee = Math.ceil((tokenValue * 0.02) * 100) / 100;
     const totalAmount = tokenValue + totalStripeFee + msFee;
     
-    // Simulate Stripe session creation
+    // Simulate Stripe session creation (from Stack Overflow pattern)
     const sessionId = 'cs_' + Math.random().toString(36).substr(2, 9);
     const sessionUrl = `https://checkout.stripe.com/c/pay/${sessionId}`;
     
     console.log('✅ MountainShares checkout session created:', sessionId);
     
-    // RETURN URL FOR CLIENT-SIDE REDIRECT (Stack Overflow solution)
+    // RETURN URL FOR CLIENT-SIDE REDIRECT (YouTube tutorial solution)
     res.json({
       success: true,
       id: sessionId,
-      url: sessionUrl, // Client will redirect to this URL
+      url: sessionUrl,
       amount: Math.round(totalAmount * 100),
       quantity: quantity,
       walletAddress: walletAddress
@@ -64,7 +73,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ MountainShares backend running on port ${PORT}`);
-  console.log(`🔧 CORS enabled with client-side redirect solution`);
+  console.log(`🔧 CORS enabled with Stack Overflow solution`);
   console.log(`💰 Regional banking fee (0.0111%) included`);
   console.log(`🏔️ Ready for West Virginia digital business transformation!`);
 });
