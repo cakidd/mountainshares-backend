@@ -1151,9 +1151,6 @@
                 
                 const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
                     body: JSON.stringify(checkoutData)
                 });
                 
