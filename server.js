@@ -318,3 +318,13 @@ app.post('/create-checkout-session', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Add health endpoint
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    service: 'mountainshares-backend',
+    cors: 'enabled'
+  });
+});
