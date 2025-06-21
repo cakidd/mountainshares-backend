@@ -64,3 +64,4 @@ app.post('/api/create-checkout-session', async (req, res) => {
 app.listen(process.env.PORT || 3000, () => {
   console.log('✅ Enhanced CORS v3 deployed');
 });
+// Force redeploy Sat Jun 21 19:49:54 EDT 2025
