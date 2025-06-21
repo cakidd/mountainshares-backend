@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3001;
 app.use((req, res, next) => {
   const allowedOrigins = [
     'https://sensational-blancmange-048bc5.netlify.app',
-    'http://localhost:3000'
+    'http://localhost:3000',  'https://mountainshares-vercel-deploy-riii.vercel.app'
   ];
   const origin = req.headers.origin;
   if (allowedOrigins.includes(origin)) {
