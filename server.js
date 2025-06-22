@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
+
 const app = express();
 
 // Simple but working CORS
@@ -21,9 +23,12 @@ app.use(cors({
 
 app.use(express.json());
 
-// Serve the frontend HTML file at the root
+// Serve static files from root directory
+app.use(express.static(__dirname));
+
+// Explicitly handle root route
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile('index.html', { root: __dirname });
 });
 
 app.get('/health', (req, res) => {
@@ -48,4 +53,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
   console.log(`🏔️ The Commons website available at http://localhost:${PORT}`);
+  console.log(`📁 Serving files from: ${__dirname}`);
 });
