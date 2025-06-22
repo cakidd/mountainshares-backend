@@ -65,6 +65,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const total = subtotal + stripeFee + regionalFee;
 
     // Create Stripe checkout session
+    console.log("Debug values:", { amount, total, loadingFee, stripeFee, regionalFee });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
