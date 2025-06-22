@@ -1,4 +1,32 @@
 const express = require('express');
+const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
+    let regionalFee = 0;
+    if (cardCountry !== 'US') regionalFee += subtotal * 0.015;
+    if (currency !== 'USD') regionalFee += subtotal * 0.01;
+    const minBuffer = subtotal * 0.005;
+    regionalFee = Math.max(regionalFee, minBuffer);
+    return Math.ceil(regionalFee * 100) / 100;
+};
+// Dynamic regional fee calculation function
+const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
+    let regionalFee = 0;
+    
+    // International card fee (1.5% for non-US cards)
+    if (cardCountry !== 'US') {
+        regionalFee += subtotal * 0.015;
+    }
+    
+    // Currency conversion fee (1% for non-USD)
+    if (currency !== 'USD') {
+        regionalFee += subtotal * 0.01;
+    }
+    
+    // Minimum regional fee buffer (0.5% to cover unexpected fees)
+    const minBuffer = subtotal * 0.005;
+    regionalFee = Math.max(regionalFee, minBuffer);
+    
+    return Math.ceil(regionalFee * 100) / 100; // Round up to nearest cent
+};
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
@@ -54,9 +82,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
     // Calculate fees
     const loadingFee = amount * 0.02; // 2% loading fee
     const subtotal = amount + loadingFee;
-    const stripeFeeExact = (subtotal * 0.029) + 0.30;
+        let stripeFeeExact = (subtotal * 0.029) + 0.30;
     const stripeFee = Math.ceil(stripeFeeExact * 100) / 100; // Round up to nearest cent
-    const totalAmount = Math.round((subtotal + stripeFee) * 100); // Convert to cents
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -72,7 +99,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 type: 'mountainshares_purchase'
               }
             },
-            unit_amount: totalAmount, // Amount in cents
+            unit_amount: Math.round(total * 100), // Amount in cents
           },
           quantity: 1,
         },
@@ -85,7 +112,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         purchaseAmount: amount.toString(),
         tokenAmount: amount.toString(),
         loadingFee: loadingFee.toFixed(2),
-        totalPaid: (totalAmount / 100).toFixed(2)
+        totalPaid: (Math.round(total * 100) / 100).toFixed(2)
       },
       payment_intent_data: {
         metadata: {
@@ -148,7 +175,7 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
   console.log(`Server v3.0 running on port ${PORT}`);
   if (!process.env.STRIPE_SECRET_KEY) {
     console.warn('⚠️  STRIPE_SECRET_KEY not set. Stripe integration will not work.');
