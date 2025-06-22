@@ -82,8 +82,8 @@ app.post('/api/create-checkout-session', async (req, res) => {
         },
       ],
       mode: 'payment',
-      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.origin}/cancel`,
+      success_url: `https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `https://mountainshares-backend-production.up.railway.app/cancel`,
       metadata: {
         tokenAmount: amount.toString(),
         loadingFee: loadingFee.toFixed(2),
