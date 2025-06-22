@@ -177,7 +177,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
     
     // Mint tokens with 2% fee distribution
     const amount = session.amount_total / 100; // Convert from cents
-    await contract.loadGiftCard(session.customer_details.email, ethers.parseEther(amount.toString()));
+    await contract.loadGiftCard({ value: ethers.parseEther(amountInDollars.toString()) });
   }
 
   res.json({received: true});
