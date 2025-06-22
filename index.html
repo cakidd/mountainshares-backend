@@ -1106,7 +1106,7 @@
             const stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
-            const regionalFee = 0.01;
+            const regionalFee = calculateRegionalFee(subtotal, cardCountry, currency);
             const total = subtotal + stripeFee + regionalFee;
             
             // Update display

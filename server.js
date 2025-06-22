@@ -1,4 +1,24 @@
 const express = require('express');
+// Dynamic regional fee calculation function
+const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
+    let regionalFee = 0;
+    
+    // International card fee (1.5% for non-US cards)
+    if (cardCountry !== 'US') {
+        regionalFee += subtotal * 0.015;
+    }
+    
+    // Currency conversion fee (1% for non-USD)
+    if (currency !== 'USD') {
+        regionalFee += subtotal * 0.01;
+    }
+    
+    // Minimum regional fee buffer (0.5% to cover unexpected fees)
+    const minBuffer = subtotal * 0.005;
+    regionalFee = Math.max(regionalFee, minBuffer);
+    
+    return Math.ceil(regionalFee * 100) / 100; // Round up to nearest cent
+};
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
