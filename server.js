@@ -15,14 +15,14 @@ const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') =>
 };
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-const port = process.env.PORT || 3000;
 
-// Middleware
+// Webhook route MUST come before express.json()
+app.use("/webhook", express.raw({type: "application/json"}));
+
+// Other middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('.'));
+app.use(express.static("."));
 
 // Health check endpoint
 app.get('/health', (req, res) => {
