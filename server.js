@@ -5,7 +5,7 @@ const fs = require('fs');
 
 const app = express();
 
-// Simple but working CORS
+// CORS configuration
 app.use(cors({
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
@@ -23,12 +23,46 @@ app.use(cors({
 
 app.use(express.json());
 
-// Serve static files from root directory
-app.use(express.static(__dirname));
-
-// Explicitly handle root route
+// Root route - serve index.html
 app.get('/', (req, res) => {
-  res.sendFile('index.html', { root: __dirname });
+  const indexPath = path.join(__dirname, 'index.html');
+  
+  // Check if file exists
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    // If not found, send the HTML content directly
+    res.send(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>The Commons - Redirecting...</title>
+        <meta http-equiv="refresh" content="0; url=https://cakidd.github.io/Commons-Connect/">
+      </head>
+      <body>
+        <h1>Redirecting to The Commons...</h1>
+        <p>If you are not redirected, <a href="https://cakidd.github.io/Commons-Connect/">click here</a>.</p>
+      </body>
+      </html>
+    `);
+  }
+});
+
+// Debug route to check file system
+app.get('/debug-fs', (req, res) => {
+  try {
+    const files = fs.readdirSync(__dirname);
+    const htmlFiles = files.filter(f => f.endsWith('.html'));
+    res.json({
+      cwd: process.cwd(),
+      dirname: __dirname,
+      htmlFiles: htmlFiles,
+      indexExists: fs.existsSync(path.join(__dirname, 'index.html')),
+      totalFiles: files.length
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
 });
 
 app.get('/health', (req, res) => {
@@ -49,9 +83,12 @@ app.post('/api/create-checkout-session', async (req, res) => {
   }
 });
 
+// Serve static files (as fallback)
+app.use(express.static(process.cwd()));
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
-  console.log(`🏔️ The Commons website available at http://localhost:${PORT}`);
-  console.log(`📁 Serving files from: ${__dirname}`);
+  console.log(`📁 Working directory: ${process.cwd()}`);
+  console.log(`📁 Script directory: ${__dirname}`);
 });
