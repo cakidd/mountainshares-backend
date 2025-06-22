@@ -1103,7 +1103,9 @@
             const subtotal = amount + loadingFee;
             
             // Stripe processing fee (2.9% + $0.30)
-            const stripeFee = (subtotal * 0.029) + 0.30;
+            const stripeFeeExact = (subtotal * 0.029) + 0.30;
+            const stripeFeeExact = (subtotal * 0.029) + 0.30;
+            const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
             const total = subtotal + stripeFee;
             
             // Update display
