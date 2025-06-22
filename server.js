@@ -177,7 +177,20 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
     
     // Mint tokens with 2% fee distribution
     const amount = session.amount_total / 100; // Convert from cents
-    await contract.loadGiftCard({ value: ethers.parseEther(amount.toString()) });
+try {
+  console.log("About to call H4H contract...");
+  console.log("Amount:", amount);
+  const tx = await contract.loadGiftCard({ 
+    value: ethers.parseEther(amount.toString()),
+    gasLimit: 500000
+  });
+  console.log("Transaction sent:", tx.hash);
+  await tx.wait();
+  console.log("Transaction confirmed!");
+} catch (error) {
+  console.error("Contract call failed:", error.message);
+  return res.json({received: true, error: error.message});
+}
   }
 
   res.json({received: true});
@@ -213,7 +226,20 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
       const amount = session.amount_total / 100;
       
       // Call loadGiftCard function with payment value
-      const tx = await contract.loadGiftCard({
+try {
+  console.log("About to call H4H contract...");
+  console.log("Amount:", amount);
+  const tx = await contract.loadGiftCard({ 
+    value: ethers.parseEther(amount.toString()),
+    gasLimit: 500000
+  });
+  console.log("Transaction sent:", tx.hash);
+  await tx.wait();
+  console.log("Transaction confirmed!");
+} catch (error) {
+  console.error("Contract call failed:", error.message);
+  return res.json({received: true, error: error.message});
+}
         value: ethers.parseEther(amount.toString())
       });
       
