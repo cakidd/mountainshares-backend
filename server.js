@@ -122,3 +122,32 @@ app.get('/api/payment-breakdown/:session_id', async (req, res) => {
     res.status(500).json({ error: 'Failed to get breakdown' });
   }
 });
+
+// Success page route
+app.get('/success', (req, res) => {
+  const sessionId = req.query.session_id;
+  res.send(`
+    <html>
+      <head><title>Payment Successful - MountainShares</title></head>
+      <body style="font-family: Arial; text-align: center; padding: 50px;">
+        <h1>🎉 Payment Successful!</h1>
+        <p>Thank you for your MountainShares purchase!</p>
+        <p>Session ID: ${sessionId}</p>
+        <p><a href="/">Return to MountainShares</a></p>
+      </body>
+    </html>
+  `);
+});
+
+// Cancel page route
+app.get('/cancel', (req, res) => {
+  res.send(`
+    <html>
+      <head><title>Payment Cancelled - MountainShares</title></head>
+      <body style="font-family: Arial; text-align: center; padding: 50px;">
+        <h1>Payment Cancelled</h1>
+        <p><a href="/">Return to MountainShares</a></p>
+      </body>
+    </html>
+  `);
+});
