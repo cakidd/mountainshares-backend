@@ -1,5 +1,4 @@
 const express = require('express');
-};
 // Dynamic regional fee calculation function
 const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
     let regionalFee = 0;
