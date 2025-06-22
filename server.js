@@ -37,10 +37,13 @@ app.listen(port, '0.0.0.0', () => {
 });
 
 // Stripe configuration
-const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
 
 // Create checkout session endpoint
 app.post('/api/create-checkout-session', async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: "Stripe not configured" });
+  }
   try {
     const { amount } = req.body;
     
