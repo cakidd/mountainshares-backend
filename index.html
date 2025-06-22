@@ -1106,7 +1106,8 @@
             const stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
-            const total = subtotal + stripeFee;
+            const regionalFee = 0.01;
+            const total = subtotal + stripeFee + regionalFee;
             
             // Update display
             document.getElementById('baseAmount').textContent = `$${amount.toFixed(2)}`;
