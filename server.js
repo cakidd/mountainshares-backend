@@ -15,6 +15,7 @@ const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') =>
 };
 
 const app = express();
+const port = process.env.PORT || 8080;
 
 // Webhook route MUST come before express.json()
 app.use("/webhook", express.raw({type: "application/json"}));
