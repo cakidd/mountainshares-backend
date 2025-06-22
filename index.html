@@ -1105,6 +1105,8 @@
             // Stripe processing fee (2.9% + $0.30)
             let stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
+            const cardCountry = "US"; const currency = "USD";
+            const calculateRegionalFee = (subtotal, cardCountry = "US", currency = "USD") => { let regionalFee = 0; if (cardCountry !== "US") regionalFee += subtotal * 0.015; if (currency !== "USD") regionalFee += subtotal * 0.01; const minBuffer = subtotal * 0.005; regionalFee = Math.max(regionalFee, minBuffer); return Math.ceil(regionalFee * 100) / 100; };
             const cardCountry = "US"; // Default - you may need to detect this
             const currency = "USD"; // Default - you may need to detect this
             const cardDetails = detectCardDetails();
