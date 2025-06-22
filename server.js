@@ -177,3 +177,25 @@ app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date().toISOString() });
 });
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(express.json());
+app.use(express.static('.'));
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Basic route
+app.get('/', (req, res) => {
+  res.sendFile(__dirname + '/index.html');
+});
+
+// Start server
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Mountain Shares server running on port ${port}`);
+});
