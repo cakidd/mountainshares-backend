@@ -15,10 +15,13 @@ const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') =>
 };
 
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 const port = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 app.use(express.static('.'));
 
 // Health check endpoint
