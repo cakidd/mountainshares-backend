@@ -1,14 +1,6 @@
 const express = require('express');
 const cors = require('cors');
 const app = express();
-const cors = require('cors');
-
-app.use(cors({
-  origin: 'https://relaxed-medovik-06c531.netlify.app',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
 
 // Simple but working CORS
 app.use(cors({
