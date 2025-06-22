@@ -151,3 +151,33 @@ app.get('/cancel', (req, res) => {
     </html>
   `);
 });
+
+// Add after successful Stripe payment
+const { ethers } = require('ethers');
+
+// Webhook to handle successful payments and mint tokens
+app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    return res.status(400).send(`Webhook signature verification failed.`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    
+    // Connect to Arbitrum and mint tokens
+    const provider = new ethers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
+    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+    
+    // Mint tokens with 2% fee distribution
+    const amount = session.amount_total / 100; // Convert from cents
+    await contract.mintWithFees(session.customer_details.email, ethers.parseEther(amount.toString()));
+  }
+
+  res.json({received: true});
+});
