@@ -228,3 +228,15 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
 
   res.json({received: true});
 });
+
+// H4H Contract ABI (add this before your webhook handler)
+const CONTRACT_ABI = [
+  {
+    "inputs": [],
+    "name": "loadGiftCard",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  }
+  // Add your complete H4H contract ABI here
+];
