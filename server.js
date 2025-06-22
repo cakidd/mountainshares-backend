@@ -61,7 +61,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const stripeFee = Math.round(stripeFeeExact * 100) / 100;
     const cardCountry = req.body.cardCountry || 'US';
     const currency = req.body.currency || 'USD';
-    const regionalFee = calculateRegionalFee(subtotal, cardCountry, currency);
+    const regionalFee = Math.round(subtotal * 0.005 * 100) / 100; // Fixed 0.5% buffer
     const total = subtotal + stripeFee + regionalFee;
 
     // Create Stripe checkout session
