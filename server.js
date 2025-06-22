@@ -82,6 +82,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         },
       ],
       mode: 'payment',
+      automatic_tax: { enabled: false },
       success_url: `https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `https://mountainshares-backend-production.up.railway.app/cancel`,
       metadata: {
