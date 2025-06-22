@@ -725,6 +725,7 @@
             }
         }
     </style>
+<script src="https://js.stripe.com/v3"></script>
 </head>
 
 <body>
@@ -949,7 +950,7 @@
         console.log('🏔️ THE COMMONS BUSINESS NETWORK LOADING 🏔️');
 
         // BACKEND CONFIGURATION
-        const BACKEND_URL = 'https://mountainshares-backend-production.up.railway.app';
+        const BACKEND_URL = 'https://mountainshares-production.up.railway.app';
         
         // CONTRACT CONFIGURATION
         const CONFIG = {
@@ -1103,11 +1104,8 @@
             const subtotal = amount + loadingFee;
             
             // Stripe processing fee (2.9% + $0.30)
-            const stripeFeeExact = (subtotal * 0.029) + 0.30;
-            const stripeFeeExact = (subtotal * 0.029) + 0.30;
-            const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
-            const regionalFee = 0.01;
-            const total = subtotal + stripeFee + regionalFee;
+            const stripeFee = (subtotal * 0.029) + 0.30;
+            const total = subtotal + stripeFee;
             
             // Update display
             document.getElementById('baseAmount').textContent = `$${amount.toFixed(2)}`;
@@ -1154,9 +1152,6 @@
                 
                 const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
                     body: JSON.stringify(checkoutData)
                 });
                 

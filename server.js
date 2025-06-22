@@ -175,7 +175,7 @@ app.post('/webhook/stripe', express.raw({type: 'application/json'}), async (req,
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(process.env.PORT || 3000, "0.0.0.0", () => {
   console.log(`Server v3.0 running on port ${PORT}`);
   if (!process.env.STRIPE_SECRET_KEY) {
     console.warn('⚠️  STRIPE_SECRET_KEY not set. Stripe integration will not work.');
