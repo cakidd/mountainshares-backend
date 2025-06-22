@@ -6,7 +6,9 @@ const app = express();
 app.use(cors({
   origin: [
     'https://relaxed-medovik-06c531.netlify.app',
+    'https://verdant-kitten-90062e.netlify.app',
     'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app',
+    'https://verdant-kitten-90062e.netlify.app',
     /\.netlify\.app$/
   ],
   credentials: true,
