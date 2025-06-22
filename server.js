@@ -103,3 +103,21 @@ app.post('/api/create-checkout-session', async (req, res) => {
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
+
+// Add endpoint to get payment breakdown after Stripe session creation
+app.get('/api/payment-breakdown/:session_id', async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.retrieve(req.params.session_id);
+    const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
+    
+    res.json({
+      amount_subtotal: session.amount_subtotal / 100,
+      amount_total: session.amount_total / 100,
+      stripe_fee_actual: paymentIntent.charges.data[0]?.balance_transaction?.fee / 100 || 'pending',
+      your_loading_fee: parseFloat(session.metadata.loadingFee),
+      breakdown_difference: (session.amount_total / 100) - parseFloat(session.metadata.totalPaid)
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to get breakdown' });
+  }
+});
