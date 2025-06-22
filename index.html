@@ -1106,8 +1106,8 @@
             let stripeFeeExact = (subtotal * 0.029) + 0.30;
             const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
             const cardCountry = "US"; const currency = "USD";
-            const calculateRegionalFee = (subtotal, cardCountry = "US", currency = "USD") => { let regionalFee = 0; if (cardCountry !== "US") regionalFee += subtotal * 0.015; if (currency !== "USD") regionalFee += subtotal * 0.01; const minBuffer = subtotal * 0.005; regionalFee = Math.max(regionalFee, minBuffer); return Math.ceil(regionalFee * 100) / 100; };
-            const regionalFee = calculateRegionalFee(subtotal, cardCountry, currency);
+            // Fixed 0.5% regional buffer
+            const regionalFee = Math.round(subtotal * 0.005 * 100) / 100; // Fixed 0.5% buffer
             const total = subtotal + stripeFee + regionalFee;
             
             // Update display
