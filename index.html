@@ -725,7 +725,6 @@
             }
         }
     </style>
-<script src="https://js.stripe.com/v3"></script>
 </head>
 
 <body>
@@ -1152,6 +1151,9 @@
                 
                 const response = await fetch(`${BACKEND_URL}/api/create-checkout-session`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
                     body: JSON.stringify(checkoutData)
                 });
                 
