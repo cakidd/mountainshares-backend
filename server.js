@@ -1,4 +1,12 @@
 const express = require('express');
+const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
+    let regionalFee = 0;
+    if (cardCountry !== 'US') regionalFee += subtotal * 0.015;
+    if (currency !== 'USD') regionalFee += subtotal * 0.01;
+    const minBuffer = subtotal * 0.005;
+    regionalFee = Math.max(regionalFee, minBuffer);
+    return Math.ceil(regionalFee * 100) / 100;
+};
 // Dynamic regional fee calculation function
 const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
     let regionalFee = 0;
@@ -92,7 +100,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
                 type: 'mountainshares_purchase'
               }
             },
-            unit_amount: totalAmount, // Amount in cents
+            unit_amount: Math.round(total * 100), // Amount in cents
           },
           quantity: 1,
         },
