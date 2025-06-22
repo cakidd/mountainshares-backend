@@ -11,7 +11,7 @@ const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') =>
     }
     const minBuffer = subtotal * 0.005;
     regionalFee = Math.max(regionalFee, minBuffer);
-    return Math.ceil(regionalFee * 100) / 100;
+    return Math.round(regionalFee * 100) / 100;
 };
 
 const app = express();
@@ -58,7 +58,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const loadingFee = amount * 0.02;
     const subtotal = amount + loadingFee;
     const stripeFeeExact = (subtotal * 0.029) + 0.30;
-    const stripeFee = Math.ceil(stripeFeeExact * 100) / 100;
+    const stripeFee = Math.round(stripeFeeExact * 100) / 100;
     const cardCountry = req.body.cardCountry || 'US';
     const currency = req.body.currency || 'USD';
     const regionalFee = calculateRegionalFee(subtotal, cardCountry, currency);
