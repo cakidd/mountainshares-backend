@@ -76,7 +76,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
               name: `${amount} MountainShares`,
               description: `Digital currency for West Virginia communities`,
             },
-            unit_amount: Math.round(total * 100), // Amount in cents
+            unit_amount: Math.round(Math.round(total * 100) / 100 * 100), // Amount in cents
           },
           quantity: 1,
         },
