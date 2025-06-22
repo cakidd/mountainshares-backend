@@ -176,7 +176,53 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
     
     // Mint tokens with 2% fee distribution
     const amount = session.amount_total / 100; // Convert from cents
-    await contract.mintWithFees(session.customer_details.email, ethers.parseEther(amount.toString()));
+    await contract.loadGiftCard(session.customer_details.email, ethers.parseEther(amount.toString()));
+  }
+
+  res.json({received: true});
+});
+
+// Updated webhook handler for H4H contract
+app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
+  const sig = req.headers['stripe-signature'];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.log(`Webhook signature verification failed.`, err.message);
+    return res.status(400).send(`Webhook Error: ${err.message}`);
+  }
+
+  if (event.type === 'checkout.session.completed') {
+    const session = event.data.object;
+    console.log('Payment successful:', session.id);
+    
+    try {
+      // Connect to Arbitrum and call H4H contract
+      const provider = new ethers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
+      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+      const contract = new ethers.Contract(
+        '0xF36Ebf89DF6C7ACdA6F98932Dc6804E833D1eFA1', // H4H contract address
+        H4H_CONTRACT_ABI, 
+        wallet
+      );
+      
+      // Calculate amount in ETH (convert from cents)
+      const amountInDollars = session.amount_total / 100;
+      
+      // Call loadGiftCard function with payment value
+      const tx = await contract.loadGiftCard({
+        value: ethers.parseEther(amountInDollars.toString())
+      });
+      
+      console.log('H4H loadGiftCard transaction:', tx.hash);
+      await tx.wait(); // Wait for confirmation
+      console.log('MountainShares tokens loaded successfully!');
+      
+    } catch (error) {
+      console.error('Error calling H4H contract:', error);
+    }
   }
 
   res.json({received: true});
