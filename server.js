@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const app = express();
 
 // Simple but working CORS
@@ -9,7 +10,9 @@ app.use(cors({
     'https://verdant-kitten-90062e.netlify.app',
     'https://68572e325b22ba201cbfdc15--relaxed-medovik-06c531.netlify.app',
     'https://verdant-kitten-90062e.netlify.app',
-    /\.netlify\.app$/
+    /\.netlify\.app$/,
+    'http://localhost:3000',
+    'http://localhost:5000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -18,6 +21,11 @@ app.use(cors({
 
 app.use(express.json());
 
+// Serve the frontend HTML file at the root
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
+
 app.get('/health', (req, res) => {
   res.json({ status: 'healthy', cors: 'working', timestamp: new Date().toISOString() });
 });
@@ -25,16 +33,12 @@ app.get('/health', (req, res) => {
 app.post('/api/create-checkout-session', async (req, res) => {
   try {
     const { amount, quantity, walletAddress } = req.body;
-    
     if (!walletAddress || !/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
       return res.status(400).json({ error: 'Invalid wallet address' });
     }
-
     const sessionId = 'cs_live_' + Math.random().toString(36).substr(2, 20);
     const sessionUrl = `https://checkout.stripe.com/c/pay/${sessionId}`;
-    
     res.json({ url: sessionUrl, sessionId });
-    
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -43,4 +47,5 @@ app.post('/api/create-checkout-session', async (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
+  console.log(`🏔️ The Commons website available at http://localhost:${PORT}`);
 });
