@@ -84,7 +84,6 @@ app.post('/api/create-checkout-session', async (req, res) => {
     const subtotal = amount + loadingFee;
         let stripeFeeExact = (subtotal * 0.029) + 0.30;
     const stripeFee = Math.ceil(stripeFeeExact * 100) / 100; // Round up to nearest cent
-    const totalAmount = Math.round((subtotal + stripeFee) * 100); // Convert to cents
 
     // Create Stripe checkout session
     const session = await stripe.checkout.sessions.create({
@@ -113,7 +112,7 @@ app.post('/api/create-checkout-session', async (req, res) => {
         purchaseAmount: amount.toString(),
         tokenAmount: amount.toString(),
         loadingFee: loadingFee.toFixed(2),
-        totalPaid: (totalAmount / 100).toFixed(2)
+        totalPaid: (Math.round(total * 100) / 100).toFixed(2)
       },
       payment_intent_data: {
         metadata: {
