@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>MountainShares - Digital Currency for West Virginia</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; background: #f5f5f5; }
+        .hero { text-align: center; margin: 40px 0; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .purchase-btn { background: #4CAF50; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 5px; cursor: pointer; transition: background 0.3s; }
+        .purchase-btn:hover { background: #45a049; }
+        .fee-breakdown { background: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 5px; border-left: 4px solid #4CAF50; }
+        .status { background: #e8f5e8; padding: 15px; margin: 15px 0; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🏔️ MountainShares</h1>
+        <p>Digital currency for West Virginia communities</p>
+        <button class="purchase-btn" onclick="purchaseMountainShares()">Purchase 1 MountainShare - $1.36</button>
+    </div>
+    
+    <div class="fee-breakdown">
+        <h3>💰 Fee Breakdown</h3>
+        <div>1 MountainShare Token: $1.00</div>
+        <div>Platform Processing: $0.36</div>
+        <div><strong>Total: $1.36</strong></div>
+    </div>
+
+    <div class="status">
+        <h3>✅ Platform Status</h3>
+        <p>Backend: Full functionality</p>
+        <p>Blockchain: Connected (Arbitrum One)</p>
+        <p>Payment Processing: Stripe integration ready</p>
+        <p>Smart Contracts: H4H loaded successfully</p>
+    </div>
+
+    <script>
+        async function purchaseMountainShares() {
+            try {
+                const response = await fetch('/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 1 })
+                });
+                
+                const { url } = await response.json();
+                window.location.href = url;
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Purchase failed. Please try again.');
+            }
+        }
+    </script>
+</body>
+</html>
