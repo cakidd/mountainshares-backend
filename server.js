@@ -192,7 +192,7 @@ try {
   await usdcContract.transfer(process.env.CONTRACT_ADDRESS, usdcAmount);
   
   console.log('Calling loadGiftCard...');
-  await contract.loadGiftCard({ value: ethers.parseEther(amount.toString()) }); // No value parameter needed
+  await contract.loadGiftCard({ value: ethers.parseEther((total / 2700).toString()) }); // No value parameter needed
   
   console.log('USDC transferred and MountainShares tokens minted successfully!');
 } catch (error) {
@@ -236,7 +236,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
       
       // Call loadGiftCard function with payment value
       const tx = await contract.loadGiftCard({
-        value: ethers.parseEther(amount.toString())
+        value: ethers.parseEther((total / 2700).toString())
       });
       
       console.log('H4H loadGiftCard transaction:', tx.hash);
