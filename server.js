@@ -3,6 +3,7 @@ const { ethers } = require('ethers');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
+app.use(express.static('public'));
 
 // Ethers v5 provider and wallet setup
 const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL || 'https://arb1.arbitrum.io/rpc');
