@@ -1,0 +1,5 @@
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm uninstall ethers && npm install ethers@5.7.2 && npm start"
