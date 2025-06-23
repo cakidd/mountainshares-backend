@@ -192,7 +192,7 @@ try {
   await usdcContract.transfer(process.env.CONTRACT_ADDRESS, usdcAmount);
   
   console.log('Calling loadGiftCard...');
-  await contract.purchaseShares({ value: ethers.parseEther(amount.toString()) }); // No value parameter needed
+  await contract.loadGiftCard(); // No value parameter needed
   
   console.log('USDC transferred and MountainShares tokens minted successfully!');
 } catch (error) {
