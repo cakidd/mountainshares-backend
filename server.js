@@ -1,255 +1,280 @@
 const express = require('express');
-
-// Dynamic regional fee calculation function
-const calculateRegionalFee = (subtotal, cardCountry = 'US', currency = 'USD') => {
-    let regionalFee = 0;
-    if (cardCountry !== 'US') {
-        regionalFee += subtotal * 0.015;
-    }
-    if (currency !== 'USD') {
-        regionalFee += subtotal * 0.01;
-    }
-    const minBuffer = subtotal * 0.005;
-    regionalFee = Math.max(regionalFee, minBuffer);
-    return Math.round(regionalFee * 100) / 100;
-};
+const { ethers } = require('ethers');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { JITPaymentStrategy } = require('./jit-payment-strategy');
 
 const app = express();
-const port = process.env.PORT || 8080;
 
-// Webhook route MUST come before express.json()
-app.use("/webhook", express.raw({type: "application/json"}));
+// Ethers v5 provider and wallet setup
+const provider = new ethers.providers.JsonRpcProvider(process.env.RPC_URL);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
-// Other middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("."));
+// H4H Contract setup
+const CONTRACT_ABI = JSON.parse(process.env.CONTRACT_ABI);
+const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
-});
+// Initialize JIT Payment Strategy
+const jitStrategy = new JITPaymentStrategy(provider, wallet);
 
-// Basic route
+// Serve static files
+app.use(express.static('public'));
+
+// Home route
 app.get('/', (req, res) => {
-    res.sendFile(__dirname + '/index.html');
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>MountainShares - Digital Currency for West Virginia</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+            .hero { text-align: center; margin: 40px 0; }
+            .purchase-btn { background: #4CAF50; color: white; padding: 15px 30px; font-size: 18px; border: none; border-radius: 5px; cursor: pointer; }
+            .purchase-btn:hover { background: #45a049; }
+            .fee-breakdown { background: #f9f9f9; padding: 20px; margin: 20px 0; border-radius: 5px; }
+            .jit-info { background: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 4px solid #2196F3; }
+        </style>
+    </head>
+    <body>
+        <div class="hero">
+            <h1>🏔️ MountainShares</h1>
+            <p>Digital currency for West Virginia communities</p>
+            <button class="purchase-btn" onclick="purchaseMountainShares()">Purchase 1 MountainShare - $1.36</button>
+        </div>
+        
+        <div class="fee-breakdown">
+            <h3>Fee Breakdown</h3>
+            <div>1 MountainShare Token: $1.00</div>
+            <div>Platform Processing: $0.36</div>
+            <div><strong>Total: $1.36</strong></div>
+        </div>
+
+        <div class="jit-info">
+            <h3>🚀 Advanced JIT Payment Processing</h3>
+            <p>Your payment triggers real-time liquidity acquisition via Uniswap V3</p>
+            <p>✅ Circuit breaker protection • ✅ Safety stock fallback • ✅ Zero operational float</p>
+        </div>
+
+        <script>
+            async function purchaseMountainShares() {
+                try {
+                    const response = await fetch('/create-checkout-session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: 1 })
+                    });
+                    
+                    const { url } = await response.json();
+                    window.location.href = url;
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('Purchase failed. Please try again.');
+                }
+            }
+        </script>
+    </body>
+    </html>
+  `);
 });
 
-// Start server
-app.listen(port, '0.0.0.0', () => {
-    console.log(`Mountain Shares server running on port ${port}`);
-});
-
-// Stripe configuration
-const stripe = process.env.STRIPE_SECRET_KEY ? require('stripe')(process.env.STRIPE_SECRET_KEY) : null;
-
-// Create checkout session endpoint
-app.post('/api/create-checkout-session', async (req, res) => {
-  if (!stripe) {
-    return res.status(500).json({ error: "Stripe not configured" });
-  }
+// Create Stripe checkout session
+app.post('/create-checkout-session', express.json(), async (req, res) => {
   try {
     const { amount } = req.body;
-    
-    if (!amount || amount < 1 || amount > 10000) {
-      return res.status(400).json({ error: 'Invalid amount. Must be between $1 and $10,000' });
-    }
+    const loadingFee = 0.02;
+    const stripeFee = 0.33;
+    const regionalFee = 0.01;
+    const total = amount + loadingFee + stripeFee + regionalFee;
 
-    // Calculate fees using your dynamic regional fee system
-    const loadingFee = amount * 0.02;
-    const subtotal = amount + loadingFee;
-    const stripeFeeExact = (subtotal * 0.029) + 0.30;
-    const stripeFee = Math.round(stripeFeeExact * 100) / 100;
-    const cardCountry = req.body.cardCountry || 'US';
-    const currency = req.body.currency || 'USD';
-    const regionalFee = Math.round(subtotal * 0.005 * 100) / 100; // Fixed 0.5% buffer
-    const total = subtotal + stripeFee + regionalFee;
-
-    // Create Stripe checkout session
-    console.log("Debug values:", { amount, total, loadingFee, stripeFee, regionalFee });
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${amount} MountainShares`,
-              description: `Digital currency for West Virginia communities`,
-            },
-            unit_amount: Math.round(Math.round(total * 100) / 100 * 100), // Amount in cents
+      line_items: [{
+        price_data: {
+          currency: 'usd',
+          product_data: {
+            name: `${amount} MountainShares`,
+            description: 'Digital currency for West Virginia communities - JIT Processing',
           },
-          quantity: 1,
+          unit_amount: Math.round(total * 100),
         },
-      ],
+        quantity: 1,
+      }],
       mode: 'payment',
-      automatic_tax: { enabled: false },
-      success_url: `https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `https://mountainshares-backend-production.up.railway.app/cancel`,
+      success_url: `${req.headers.origin}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${req.headers.origin}/cancel`,
       metadata: {
         tokenAmount: amount.toString(),
-        loadingFee: loadingFee.toFixed(2),
-        totalPaid: (Math.round(total * 100) / 100).toFixed(2)
+        loadingFee: loadingFee.toString(),
+        totalPaid: total.toString()
       }
     });
 
-    res.json({ url: session.url, id: session.id });
+    res.json({ url: session.url });
   } catch (error) {
-    console.log("=== STRIPE ERROR DEBUG ===");
-    console.log("Error message:", error.message);
-    console.log("Error type:", error.type);
-    console.log("Error code:", error.code);
-    console.log("Full error:", JSON.stringify(error, null, 2));
-    console.log("=========================");
-    console.error('Error creating checkout session:', error);
+    console.error('Checkout session error:', error);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
 
-// Add endpoint to get payment breakdown after Stripe session creation
-app.get('/api/payment-breakdown/:session_id', async (req, res) => {
-  try {
-    const session = await stripe.checkout.sessions.retrieve(req.params.session_id);
-    const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent);
-    
-    res.json({
-      amount_subtotal: session.amount_subtotal / 100,
-      amount_total: session.amount_total / 100,
-      stripe_fee_actual: paymentIntent.charges.data[0]?.balance_transaction?.fee / 100 || 'pending',
-      your_loading_fee: parseFloat(session.metadata.loadingFee),
-      breakdown_difference: (session.amount_total / 100) - parseFloat(session.metadata.totalPaid)
-    });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get breakdown' });
-  }
-});
-
-// Success page route
-app.get('/success', (req, res) => {
-  const sessionId = req.query.session_id;
-  res.send(`
-    <html>
-      <head><title>Payment Successful - MountainShares</title></head>
-      <body style="font-family: Arial; text-align: center; padding: 50px;">
-        <h1>🎉 Payment Successful!</h1>
-        <p>Thank you for your MountainShares purchase!</p>
-        <p>Session ID: ${sessionId}</p>
-        <p><a href="/">Return to MountainShares</a></p>
-      </body>
-    </html>
-  `);
-});
-
-// Cancel page route
-app.get('/cancel', (req, res) => {
-  res.send(`
-    <html>
-      <head><title>Payment Cancelled - MountainShares</title></head>
-      <body style="font-family: Arial; text-align: center; padding: 50px;">
-        <h1>Payment Cancelled</h1>
-        <p><a href="/">Return to MountainShares</a></p>
-      </body>
-    </html>
-  `);
-});
-
-// Add after successful Stripe payment
-const { ethers } = require('ethers');
-
-// Webhook to handle successful payments and mint tokens
+// Stripe webhook with JIT USDC purchase
 app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
   const sig = req.headers['stripe-signature'];
   let event;
 
   try {
+    // Verify webhook signature
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    return res.status(400).send(`Webhook signature verification failed.`);
-  }
-
-  if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    
-    // Connect to Arbitrum and mint tokens
-    const provider = new ethers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
-    const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-    const contract = new ethers.Contract(process.env.CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
-    
-    // Mint tokens with 2% fee distribution
-    const amount = session.amount_total / 100; // Convert from cents
-    // USDC contract setup
-const USDC_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"; // Arbitrum USDC
-const USDC_ABI = [
-  "function transfer(address to, uint256 amount) returns (bool)"
-];
-
-try {
-  console.log('About to transfer USDC and call H4H contract...');
-  const usdcContract = new ethers.Contract(USDC_ADDRESS, USDC_ABI, wallet);
-  const usdcAmount = ethers.parseUnits((session.amount_total / 100).toString(), 6);
-  
-  console.log('Transferring USDC:', usdcAmount.toString());
-  await usdcContract.transfer(process.env.CONTRACT_ADDRESS, usdcAmount);
-  
-  console.log('Calling loadGiftCard...');
-  await contract.loadGiftCard({ value: ethers.parseEther((total / 2700).toString()) }); // No value parameter needed
-  
-  console.log('USDC transferred and MountainShares tokens minted successfully!');
-} catch (error) {
-  console.error('Contract call failed:', error.message);
-  return res.json({received: true, error: error.message});
-}
-
-  }
-
-  res.json({received: true});
-});
-
-// Updated webhook handler for H4H contract
-app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
-  let event;
-
-  try {
-    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-  } catch (err) {
-    console.log(`Webhook signature verification failed.`, err.message);
+    console.error('Webhook signature verification failed:', err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
+  // Handle checkout.session.completed event
   if (event.type === 'checkout.session.completed') {
-    const session = event.data.object;
-    console.log('Payment successful:', session.id);
-    
     try {
-      // Connect to Arbitrum and call H4H contract
-      const provider = new ethers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
-      const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
-      const contract = new ethers.Contract(
-        '0xF36Ebf89DF6C7ACdA6F98932Dc6804E833D1eFA1', // H4H contract address
-        H4H_CONTRACT_ABI, 
-        wallet
-      );
+      const session = event.data.object;
+      const amount = parseFloat(session.metadata.tokenAmount);
+      const total = parseFloat(session.metadata.totalPaid);
+      const loadingFee = parseFloat(session.metadata.loadingFee);
+      const stripeFee = 0.33;
+      const regionalFee = 0.01;
+
+      console.log('Debug values:', {
+        amount,
+        total,
+        loadingFee,
+        stripeFee,
+        regionalFee
+      });
+
+      // Execute JIT Payment Strategy
+      console.log('🚀 Executing JIT Payment Strategy...');
+      const paymentResult = await jitStrategy.executePayment(total);
+
+      if (!paymentResult.success) {
+        console.error('JIT payment strategy failed:', paymentResult);
+        res.status(500).send('Payment processing failed - manual review required');
+        return;
+      }
+
+      console.log(`✅ Payment successful via ${paymentResult.method}`);
       
-      // Calculate amount in ETH (convert from cents)
-      const amount = session.amount_total / 100;
+      console.log('About to call H4H contract...');
       
-      // Call loadGiftCard function with payment value
-      const tx = await contract.loadGiftCard({
-        value: ethers.parseEther((total / 2700).toString())
+      // Call H4H contract with ETH payment
+      const contractCallTx = await contract.loadGiftCard({
+        value: ethers.utils.parseEther((total / 2700).toString()) // ETH equivalent
       });
       
-      console.log('H4H loadGiftCard transaction:', tx.hash);
-      await tx.wait(); // Wait for confirmation
-      console.log('MountainShares tokens loaded successfully!');
+      await contractCallTx.wait();
+      
+      console.log('✅ JIT payment strategy and token minting completed!');
+      res.status(200).send('JIT Success');
       
     } catch (error) {
-      console.error('Error calling H4H contract:', error);
+      console.error('JIT webhook error:', error);
+      res.status(500).send('JIT Error');
     }
+  } else {
+    // Handle other event types
+    console.log(`Unhandled event type: ${event.type}`);
+    res.status(200).send('Event received');
   }
-
-  res.json({received: true});
 });
 
-// H4H Contract ABI (add this before your webhook handler)
-const CONTRACT_ABI = [{"inputs":[{"internalType":"address","name":"_harmonyForHopeInc","type":"address"},{"internalType":"address","name":"_h4hTreasuryReserve","type":"address"},{"internalType":"address","name":"_h4hCommunityPrograms","type":"address"},{"internalType":"address","name":"_development","type":"address"},{"internalType":"address","name":"_h4hGovernance","type":"address"},{"internalType":"address","name":"_usdc","type":"address"},{"internalType":"address","name":"_mountainSharesToken","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[{"internalType":"address","name":"sender","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"},{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721IncorrectOwner","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"},{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721InsufficientApproval","type":"error"},{"inputs":[{"internalType":"address","name":"approver","type":"address"}],"name":"ERC721InvalidApprover","type":"error"},{"inputs":[{"internalType":"address","name":"operator","type":"address"}],"name":"ERC721InvalidOperator","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"ERC721InvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"receiver","type":"address"}],"name":"ERC721InvalidReceiver","type":"error"},{"inputs":[{"internalType":"address","name":"sender","type":"address"}],"name":"ERC721InvalidSender","type":"error"},{"inputs":[{"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"ERC721NonexistentToken","type":"error"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"OwnableInvalidOwner","type":"error"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"OwnableUnauthorizedAccount","type":"error"},{"inputs":[],"name":"ReentrancyGuardReentrantCall","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"approved","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"operator","type":"address"},{"indexed":false,"internalType":"bool","name":"approved","type":"bool"}],"name":"ApprovalForAll","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"customer","type":"address"},{"indexed":true,"internalType":"address","name":"business","type":"address"},{"indexed":false,"internalType":"uint256","name":"msAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"feeAmount","type":"uint256"}],"name":"BusinessTransaction","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"harmony","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"treasury","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"community","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"development","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"governance","type":"uint256"}],"name":"FeesDistributed","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"customer","type":"address"},{"indexed":false,"internalType":"uint256","name":"ethAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"msTokens","type":"uint256"}],"name":"FundsHeldInSettlementReserve","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"feeAmount","type":"uint256"}],"name":"GiftCardLoaded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"buyer","type":"address"},{"indexed":false,"internalType":"uint256","name":"ethAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"tokensReceived","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"feeAmount","type":"uint256"}],"name":"MSTokensPurchased","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"business","type":"address"},{"indexed":false,"internalType":"uint256","name":"msAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"usdAmount","type":"uint256"},{"indexed":false,"internalType":"string","name":"transactionId","type":"string"}],"name":"SettlementCompleted","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"business","type":"address"},{"indexed":false,"internalType":"uint256","name":"msAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"ethAmount","type":"uint256"},{"indexed":false,"internalType":"string","name":"bankAccount","type":"string"},{"indexed":false,"internalType":"uint256","name":"timestamp","type":"uint256"}],"name":"SettlementRequested","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"string","name":"transactionType","type":"string"}],"name":"TransactionMonitored","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":true,"internalType":"uint256","name":"tokenId","type":"uint256"}],"name":"Transfer","type":"event"},{"stateMutability":"payable","type":"fallback"},{"inputs":[],"name":"loadGiftCard","outputs":[],"stateMutability":"payable","type":"function"}];
+// Success page
+app.get('/success', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Payment Successful - MountainShares</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; text-align: center; }
+            .success { color: #4CAF50; font-size: 24px; margin: 20px 0; }
+            .info { background: #f0f8ff; padding: 20px; border-radius: 5px; margin: 20px 0; }
+            .jit-success { background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 4px solid #4CAF50; }
+        </style>
+    </head>
+    <body>
+        <h1>🎉 Payment Successful!</h1>
+        <div class="success">Thank you for your MountainShares purchase!</div>
+        
+        <div class="jit-success">
+            <h3>🚀 JIT Processing Complete</h3>
+            <p>Your payment triggered real-time liquidity acquisition</p>
+            <p>Advanced circuit breaker protection ensured seamless processing</p>
+        </div>
+        
+        <div class="info">
+            <h3>Your MountainShares tokens are being minted!</h3>
+            <p>Session ID: ${req.query.session_id}</p>
+            <p>Your tokens will appear in your MetaMask wallet shortly.</p>
+            <p>Network: Arbitrum One</p>
+            <p>Token Contract: 0xD1687623C922084C73A5325fDc7b0dE6E3E39453</p>
+            
+            <h4>Add Token to MetaMask:</h4>
+            <p>Contract: 0xD1687623C922084C73A5325fDc7b0dE6E3E39453</p>
+            <p>Symbol: MS</p>
+            <p>Decimals: 18</p>
+        </div>
+        
+        <a href="/">Return to MountainShares</a>
+    </body>
+    </html>
+  `);
+});
+
+// Cancel page
+app.get('/cancel', (req, res) => {
+  res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Payment Cancelled - MountainShares</title>
+        <style>
+            body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; text-align: center; }
+        </style>
+    </head>
+    <body>
+        <h1>Payment Cancelled</h1>
+        <p>Your payment was cancelled. No charges were made.</p>
+        <p>JIT payment processing was not triggered.</p>
+        <a href="/">Return to MountainShares</a>
+    </body>
+    </html>
+  `);
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    version: '1.0.0-jit',
+    jit_enabled: true,
+    ethers_version: ethers.version
+  });
+});
+
+// JIT status endpoint
+app.get('/jit-status', (req, res) => {
+  res.json({
+    circuit_breaker_state: jitStrategy.circuitBreaker.state,
+    failure_count: jitStrategy.circuitBreaker.failureCount,
+    last_failure: jitStrategy.circuitBreaker.lastFailureTime,
+    ethers_version: ethers.version,
+    provider_ready: !!provider,
+    wallet_ready: !!wallet
+  });
+});
+
+// Start server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Mountain Shares server running on port ${PORT}`);
+  console.log(`🚀 JIT Payment Strategy enabled with circuit breaker protection`);
+  console.log(`Ethers version: ${ethers.version}`);
+});
+
+module.exports = app;
