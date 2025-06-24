@@ -140,3 +140,60 @@ app.listen(PORT, '0.0.0.0', () => {
   console.log(`MountainShares server running on port ${PORT}`);
   console.log(`Contracts: ${msToken ? 'Connected' : 'Failed'}`);
 });
+
+// Contract verification endpoint
+app.get('/verify/:sessionId', async (req, res) => {
+  const { sessionId } = req.params;
+  
+  try {
+    // Verify the Stripe session was completed
+    const session = await stripe.checkout.sessions.retrieve(sessionId);
+    
+    // Get recent contract events
+    const filter = msToken.filters.Transfer();
+    const recentEvents = await msToken.queryFilter(filter, -100);
+    
+    // Get current contract state
+    const totalSupply = await msToken.totalSupply();
+    
+    // Look for events around the payment time
+    const sessionTime = new Date(session.created * 1000);
+    const relatedEvents = recentEvents.filter(event => {
+      const eventTime = new Date(event.blockNumber * 15000); // Approximate block time
+      return Math.abs(eventTime - sessionTime) < 600000; // Within 10 minutes
+    });
+    
+    res.json({
+      stripeSession: {
+        id: session.id,
+        status: session.payment_status,
+        amount: session.amount_total / 100, // Convert from cents
+        created: sessionTime
+      },
+      contractState: {
+        totalSupply: ethers.utils.formatEther(totalSupply),
+        contractAddress: MS_TOKEN_ADDRESS
+      },
+      relatedEvents: relatedEvents.map(event => ({
+        transactionHash: event.transactionHash,
+        blockNumber: event.blockNumber,
+        from: event.args.from,
+        to: event.args.to,
+        amount: ethers.utils.formatEther(event.args.value),
+        arbiscanLink: `https://arbiscan.io/tx/${event.transactionHash}`
+      })),
+      verification: {
+        stripeCompleted: session.payment_status === 'paid',
+        blockchainEvents: relatedEvents.length > 0,
+        timestamp: new Date().toISOString()
+      }
+    });
+    
+  } catch (error) {
+    console.error('Verification error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      sessionId: sessionId 
+    });
+  }
+});
