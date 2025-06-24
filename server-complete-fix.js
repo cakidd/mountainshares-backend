@@ -133,12 +133,3 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {
   console.log(`MountainShares server running on port ${PORT}`);
 });
-
-// API health check to force Railway to recognize this as an API server
-app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'API_SERVER_RUNNING',
-    message: 'Express API is working correctly',
-    timestamp: new Date().toISOString()
-  });
-});
