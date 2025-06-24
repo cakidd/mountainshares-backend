@@ -5,47 +5,79 @@ const { ethers } = require('ethers');
 const app = express();
 
 // Webhook route MUST come before express.json() middleware
-app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) => {
-  const sig = req.headers['stripe-signature'];
+app.post("/webhook", express.raw({type: "application/json"}), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
   let event;
 
   try {
-    // Use raw buffer for signature verification
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
     console.log(`⚠️ Webhook signature verification failed.`, err.message);
     return res.status(400).send(`Webhook Error: ${err.message}`);
   }
 
-  if (event.type === 'checkout.session.completed') {
+  if (event.type === "checkout.session.completed") {
     const session = event.data.object;
-    console.log('🎉 Payment completed:', session.id);
+    console.log("🎉 Payment completed:", session.id);
+    
+    try {
+      if (!contractWithSigner) {
+        console.error("❌ CRITICAL: No wallet configured - cannot mint tokens!");
+        return res.status(500).json({error: "Minting not available"});
+      }
+      
+      const dollarAmount = session.amount_total / 100;
+      const tokenAmount = ethers.utils.parseEther(dollarAmount.toString());
+      const recipientAddress = "0xdE75F5168e33db23fa5601b5fc88545be7b287a4";
+      
+      console.log(`🔄 Minting ${dollarAmount} tokens for payment ${session.id}`);
+      
+      const tx = await contractWithSigner.mint(recipientAddress, tokenAmount);
+      console.log("✅ Mint transaction sent:", tx.hash);
+      console.log("🔗 Arbiscan link:", `https://arbiscan.io/tx/${tx.hash}`);
+      
+      const receipt = await tx.wait();
+      console.log("✅ Transaction confirmed in block:", receipt.blockNumber);
+      
+    } catch (contractError) {
+      console.error("❌ CRITICAL: Token minting failed:", contractError.message);
+    }
   }
 
   res.json({received: true});
+});
 });
 
 // JSON middleware comes AFTER webhook route
 app.use(express.json());
 
-// Contract setup with proper ethers v5 syntax
+// Contract setup with COMPLETE ABI including mint function
 const MS_TOKEN_ADDRESS = process.env.CONTRACT_ADDRESS || "0xE8A9c6fFE6b2344147D886EcB8608C5F7863B20D";
 const TOKEN_ABI = [
   "function totalSupply() view returns (uint256)",
   "function balanceOf(address) view returns (uint256)",
-  "event Transfer(address indexed from, address indexed to, uint256 value)"
+  "function mint(address to, uint256 amount) external",
+  "function transfer(address to, uint256 amount) external returns (bool)",
+  "event Transfer(address indexed from, address indexed to, uint256 value)",
+  "event Mint(address indexed to, uint256 amount)"
 ];
 
-let provider, msToken;
+let provider, msToken, wallet, contractWithSigner;
 
 try {
-  // Correct ethers v5 provider syntax
-  provider = new ethers.providers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
-  
-  // Correct ethers v5 contract syntax
+  provider = new ethers.providers.JsonRpcProvider("https://arb1.arbitrum.io/rpc");
   msToken = new ethers.Contract(MS_TOKEN_ADDRESS, TOKEN_ABI, provider);
   
-  console.log('✅ Contract setup successful');
+  if (process.env.PRIVATE_KEY) {
+    wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+    contractWithSigner = msToken.connect(wallet);
+    console.log("✅ Contract setup successful with minting capability");
+  } else {
+    console.log("⚠️ No private key - read-only mode");
+  }
+} catch (error) {
+  console.error("❌ Contract setup failed:", error.message);
+}
 } catch (error) {
   console.error('❌ Contract setup failed:', error.message);
 }
