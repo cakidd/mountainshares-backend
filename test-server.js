@@ -1,15 +1,25 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
+
+app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('Hello from Railway! Server is working.');
+  res.json({ 
+    message: 'EXPRESS SERVER WORKING',
+    timestamp: new Date().toISOString(),
+    test: 'This should be JSON, not HTML'
+  });
 });
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'OK', port: port });
+app.get('/test-contract', (req, res) => {
+  res.json({
+    status: 'SUCCESS',
+    message: 'Express endpoint working correctly',
+    timestamp: new Date().toISOString()
+  });
 });
 
-app.listen(port, '0.0.0.0', () => {
-  console.log(`Test server running on port ${port}`);
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Test server running on port ${PORT}`);
 });
