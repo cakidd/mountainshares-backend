@@ -8,7 +8,7 @@ app.use(express.json());
 
 // ✅ FIXED: Use ethers v6 syntax
 const provider = new ethers.providers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
-const wallet = new new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 // YOUR ACTUAL MOUNTAINSHARES CONTRACTS
 const MS_TOKEN_ADDRESS = '0xE8A9c6fFE6b2344147D886EcB8608C5F7863B20D';
@@ -25,7 +25,7 @@ const TOKEN_ABI = [
 
 let msToken;
 try {
-  msToken = new new ethers.Contract(MS_TOKEN_ADDRESS, TOKEN_ABI, wallet);
+  msToken = new ethers.Contract(MS_TOKEN_ADDRESS, TOKEN_ABI, wallet);
   console.log('✅ MountainShares contracts loaded successfully');
 } catch (error) {
   console.error('❌ Contract setup failed:', error.message);
@@ -93,7 +93,7 @@ app.post('/webhook', express.raw({type: 'application/json'}), async (req, res) =
         // Use your actual contract methods with ethers v6 syntax
         const mintTx = await msToken.mint(
           '0xde75f5168e33db23fa5601b5fc88545be7b287a4', // H4H wallet
-          ethers.parseEther(amount.toString()) // v6 syntax
+          ethers.utils.parseEther(amount.toString()) // v6 syntax
         );
         await mintTx.wait();
         
