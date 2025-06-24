@@ -7,8 +7,8 @@ app.use(express.static('public'));
 app.use(express.json());
 
 // ✅ FIXED: Use ethers v6 syntax
-const provider = new ethers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
-const wallet = new ethers.Wallet(process.env.PRIVATE_KEY, provider);
+const provider = new ethers.providers.JsonRpcProvider('https://arb1.arbitrum.io/rpc');
+const wallet = new new ethers.Wallet(process.env.PRIVATE_KEY, provider);
 
 // YOUR ACTUAL MOUNTAINSHARES CONTRACTS
 const MS_TOKEN_ADDRESS = '0xE8A9c6fFE6b2344147D886EcB8608C5F7863B20D';
@@ -25,7 +25,7 @@ const TOKEN_ABI = [
 
 let msToken;
 try {
-  msToken = new ethers.Contract(MS_TOKEN_ADDRESS, TOKEN_ABI, wallet);
+  msToken = new new ethers.Contract(MS_TOKEN_ADDRESS, TOKEN_ABI, wallet);
   console.log('✅ MountainShares contracts loaded successfully');
 } catch (error) {
   console.error('❌ Contract setup failed:', error.message);
