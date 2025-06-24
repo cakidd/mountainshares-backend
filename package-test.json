@@ -1,0 +1,15 @@
+{
+  "name": "mountainshares-tests",
+  "version": "1.0.0",
+  "scripts": {
+    "test": "mocha test-mountainshares.js --timeout 10000",
+    "test-contracts": "mocha test-mountainshares.js --grep 'Smart Contract' --timeout 15000",
+    "test-api": "mocha test-mountainshares.js --grep 'Stripe|Platform' --timeout 10000"
+  },
+  "devDependencies": {
+    "mocha": "^10.0.0",
+    "chai": "^4.3.0",
+    "axios": "^1.0.0",
+    "ethers": "^5.7.2"
+  }
+}
