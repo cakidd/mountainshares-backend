@@ -9,7 +9,7 @@ app.use(cors({
     credentials: true
 }));
 
-// Health check endpoint (this works already)
+// Health endpoint
 app.get('/health', (req, res) => {
     res.json({
         status: 'healthy',
@@ -18,8 +18,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-
-// Calculate purchase pricing (your frontend calls this)
+// Calculate purchase pricing
 app.post('/calculate-purchase', (req, res) => {
     const { msTokens } = req.body;
     const quantity = parseInt(msTokens) || 1;
@@ -40,7 +39,7 @@ app.post('/calculate-purchase', (req, res) => {
     });
 });
 
-// Create payment session (your frontend calls this)
+// Create payment session
 app.post('/create-payment-session', async (req, res) => {
     const { quantity, walletaddress, amount, productname } = req.body;
     
