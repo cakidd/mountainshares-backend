@@ -1,10 +1,11 @@
 {
   "version": 2,
-  "functions": {
-    "app.js": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "app.js",
+      "use": "@vercel/node"
     }
-  },
+  ],
   "routes": [
     {
       "src": "/health",
@@ -19,7 +20,7 @@
       "dest": "/app.js"
     },
     {
-      "src": "/cancel", 
+      "src": "/cancel",
       "dest": "/app.js"
     },
     {
