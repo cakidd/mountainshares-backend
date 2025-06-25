@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "functions": {
+    "app.js": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/create-checkout-session",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/success",
+      "dest": "/app.js"
+    },
+    {
+      "src": "/cancel", 
+      "dest": "/app.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ]
+}
