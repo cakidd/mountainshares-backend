@@ -1,25 +1,20 @@
 const express = require('express');
-const cors = require('cors');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const path = require('path');
+const cors = require('cors');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware for Stripe webhook (raw body needed)
-app.use('/stripe-webhook', express.raw({ type: 'application/json' }));
-
-// Regular middleware for other routes
-app.use(express.json());
+// Middleware
 app.use(cors());
-
-// Serve static files
+app.use(express.json());
 app.use(express.static('.'));
 
-// Health check endpoint with contract info
+// Health check endpoint with detailed debugging
 app.get('/health', (req, res) => {
-    res.json({ 
+    res.json({
         status: 'healthy',
+        timestamp: new Date().toISOString(),
         contracts: {
             token: '0xE8A9c6fFE6b2344147D886EcB8608C5F7863B20D',
             purchase: '0x2a36e8775EbfaAb18E25Df81EF6Eab05E026f400',
@@ -28,7 +23,13 @@ app.get('/health', (req, res) => {
         },
         stripe: {
             keyLoaded: !!process.env.STRIPE_SECRET_KEY,
-            keyPrefix: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 12) + '...' : 'not set'
+            keyPrefix: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 15) + '...' : 'not set',
+            keyLength: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.length : 0
+        },
+        env: {
+            nodeEnv: process.env.NODE_ENV,
+            port: process.env.PORT,
+            stripeVarsFound: Object.keys(process.env).filter(key => key.includes('STRIPE'))
         }
     });
 });
@@ -36,29 +37,52 @@ app.get('/health', (req, res) => {
 // Test Stripe connection
 app.get('/test-stripe', async (req, res) => {
     try {
+        if (!process.env.STRIPE_SECRET_KEY) {
+            return res.status(500).json({
+                success: false,
+                error: 'STRIPE_SECRET_KEY not found in environment'
+            });
+        }
+        
         const prices = await stripe.prices.list({ limit: 1 });
-        res.json({ success: true, message: 'Stripe connection successful' });
+        res.json({ 
+            success: true, 
+            message: 'Stripe connection successful',
+            priceCount: prices.data.length
+        });
     } catch (error) {
-        res.status(500).json({ 
-            success: false, 
+        res.status(500).json({
+            success: false,
             error: error.message,
-            type: error.type 
+            type: error.type,
+            code: error.code
         });
     }
 });
 
-// Create Stripe checkout session
+// Create Stripe checkout session with enhanced logging
 app.post('/create-checkout-session', async (req, res) => {
     try {
         const { amount, customerWallet } = req.body;
 
+        console.log(`🏔️ [${new Date().toISOString()}] Creating checkout session:`, { amount, customerWallet });
+        console.log('🔑 Stripe key status:', !!process.env.STRIPE_SECRET_KEY);
+
         if (!amount) {
-            return res.status(400).json({ 
-                error: 'Missing required field: amount' 
+            console.log('❌ Missing amount field');
+            return res.status(400).json({
+                error: 'Missing required field: amount'
             });
         }
 
-        const session = await stripe.checkout.sessions.create({
+        if (!process.env.STRIPE_SECRET_KEY) {
+            console.log('❌ STRIPE_SECRET_KEY not found in environment');
+            return res.status(500).json({
+                error: 'Stripe not configured - missing secret key'
+            });
+        }
+
+        const sessionData = {
             payment_method_types: ['card'],
             line_items: [{
                 price_data: {
@@ -67,39 +91,87 @@ app.post('/create-checkout-session', async (req, res) => {
                         name: '1 MountainShares',
                         description: 'Digital currency for West Virginia communities',
                     },
-                    unit_amount: Math.round(amount * 100), // Stripe expects cents
+                    unit_amount: Math.round(amount * 100),
                 },
                 quantity: 1,
             }],
             mode: 'payment',
-            success_url: `https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${req.headers.origin}/cancel`,
+            success_url: 'https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'https://mountainshares-backend-production.up.railway.app/cancel',
             metadata: {
                 totalPaid: amount.toString(),
                 tokenAmount: (amount * 0.98).toString(),
                 customerWallet: customerWallet || 'not_provided'
             }
+        };
+
+        console.log('🌐 Session URLs:', {
+            success: sessionData.success_url,
+            cancel: sessionData.cancel_url
         });
 
-        res.json({ url: session.url });
+        const session = await stripe.checkout.sessions.create(sessionData);
+
+        console.log('✅ Checkout session created successfully:', session.id);
+        res.json({ 
+            url: session.url, 
+            sessionId: session.id,
+            success: true
+        });
+
     } catch (error) {
-        console.error('Error creating checkout session:', error);
-        console.error('Error details:', {
+        console.error('❌ Error creating checkout session:', {
             message: error.message,
             type: error.type,
             code: error.code,
-            statusCode: error.statusCode
+            param: error.param,
+            timestamp: new Date().toISOString()
         });
-        res.status(500).json({ 
+        
+        res.status(500).json({
             error: 'Failed to create checkout session',
             message: error.message,
-            type: error.type
+            type: error.type,
+            code: error.code,
+            param: error.param
         });
     }
 });
 
+// Success page
+app.get('/success', (req, res) => {
+    const sessionId = req.query.session_id;
+    console.log('✅ Payment success page accessed:', sessionId);
+    res.send(`
+        <html>
+        <head><title>Payment Successful - MountainShares</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>🎉 Payment Successful!</h1>
+            <p>Your MountainShares purchase was completed successfully.</p>
+            <p><strong>Session ID:</strong> ${sessionId}</p>
+            <a href="/" style="background: #FFD700; color: black; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Return to MountainShares</a>
+        </body>
+        </html>
+    `);
+});
+
+// Cancel page
+app.get('/cancel', (req, res) => {
+    console.log('❌ Payment cancelled page accessed');
+    res.send(`
+        <html>
+        <head><title>Payment Cancelled - MountainShares</title></head>
+        <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1>❌ Payment Cancelled</h1>
+            <p>Your payment was cancelled. No charges were made.</p>
+            <a href="/" style="background: #0066FF; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Return to MountainShares</a>
+        </body>
+        </html>
+    `);
+});
+
 // Stripe webhook handler
-app.post('/stripe-webhook', (req, res) => {
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), (req, res) => {
     const sig = req.headers['stripe-signature'];
     const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -107,10 +179,8 @@ app.post('/stripe-webhook', (req, res) => {
 
     try {
         if (endpointSecret) {
-            // Verify webhook signature
             event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
         } else {
-            // For development/testing without webhook secret
             event = JSON.parse(req.body);
         }
     } catch (err) {
@@ -118,25 +188,12 @@ app.post('/stripe-webhook', (req, res) => {
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle the event
     switch (event.type) {
         case 'checkout.session.completed':
             const session = event.data.object;
-            console.log('Payment successful for session:', session.id);
-            console.log('Customer wallet:', session.metadata.customerWallet);
-            
-            // Here you would typically:
-            // 1. Verify the payment
-            // 2. Update your database
-            // 3. Trigger any business logic (e.g., mint NFTs, update balances)
-            
+            console.log('💰 Payment successful for session:', session.id);
+            console.log('👛 Customer wallet:', session.metadata.customerWallet);
             break;
-        
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object;
-            console.log('PaymentIntent succeeded:', paymentIntent.id);
-            break;
-            
         default:
             console.log(`Unhandled event type ${event.type}`);
     }
@@ -144,25 +201,159 @@ app.post('/stripe-webhook', (req, res) => {
     res.json({ received: true });
 });
 
-// Get checkout session details
-app.get('/checkout-session/:sessionId', async (req, res) => {
-    try {
-        const session = await stripe.checkout.sessions.retrieve(req.params.sessionId);
-        res.json(session);
-    } catch (error) {
-        console.error('Error retrieving session:', error);
-        res.status(500).json({ error: 'Failed to retrieve session' });
+// Start server with enhanced logging
+app.listen(PORT, () => {
+    console.log(`🏔️ MountainShares Server starting on port ${PORT}`);
+    console.log(`📅 Startup time: ${new Date().toISOString()}`);
+    console.log('🔍 Environment check:');
+    console.log('  - NODE_ENV:', process.env.NODE_ENV || 'not set');
+    console.log('  - PORT:', process.env.PORT || '3000 (default)');
+    console.log('  - STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? '✅ Set (' + process.env.STRIPE_SECRET_KEY.length + ' chars)' : '❌ Missing');
+    console.log('  - STRIPE_SECRET_KEY prefix:', process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 15) + '...' : 'none');
+    console.log('  - All STRIPE env vars:', Object.keys(process.env).filter(key => key.includes('STRIPE')));
+    console.log('🚀 Server ready to accept connections');
+    
+    if (!process.env.STRIPE_SECRET_KEY) {
+        console.log('⚠️  WARNING: STRIPE_SECRET_KEY not found! Payments will fail.');
+        console.log('⚠️  Set it with: railway variables --set STRIPE_SECRET_KEY=sk_live_...');
     }
 });
 
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log('Environment check:');
-    console.log('- STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? '✅ Set' : '❌ Missing');
-    console.log('- Frontend URL:', process.env.FRONTEND_URL || 'Using request origin');
+
+// Calculate purchase pricing
+app.post('/calculate-purchase', (req, res) => {
+    const { msTokens } = req.body;
+    const quantity = parseInt(msTokens) || 1;
     
-    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_test_key_here')) {
-        console.log('⚠️  WARNING: Set real Stripe keys in Railway dashboard!');
+    const tokenValue = quantity * 1.00;
+    const stripeFee = (tokenValue * 0.029) + 0.30;
+    const mountainSharesFee = tokenValue * 0.02;
+    const totalCharge = tokenValue + stripeFee + mountainSharesFee;
+    
+    res.json({
+        success: true,
+        pricing: {
+            tokenValue: tokenValue,
+            stripeFee: stripeFee,
+            mountainSharesFee: mountainSharesFee,
+            totalCharge: totalCharge
+        }
+    });
+});
+
+// Create payment session endpoint
+app.post('/create-payment-session', async (req, res) => {
+    const { quantity, walletaddress, amount, productname } = req.body;
+    
+    try {
+        // This should call your registry contract
+        // For now, return success to test the flow
+        res.json({
+            success: true,
+            id: 'test_session_' + Date.now(),
+            orderid: 'order_' + Date.now(),
+            walletAddress: walletaddress,
+            quantity: quantity
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+
+// Calculate purchase pricing
+app.post('/calculate-purchase', (req, res) => {
+    const { msTokens } = req.body;
+    const quantity = parseInt(msTokens) || 1;
+    
+    const tokenValue = quantity * 1.00;
+    const stripeFee = (tokenValue * 0.029) + 0.30;
+    const mountainSharesFee = tokenValue * 0.02;
+    const totalCharge = tokenValue + stripeFee + mountainSharesFee;
+    
+    res.json({
+        success: true,
+        pricing: {
+            tokenValue: tokenValue,
+            stripeFee: stripeFee,
+            mountainSharesFee: mountainSharesFee,
+            totalCharge: totalCharge
+        }
+    });
+});
+
+// Create payment session endpoint  
+app.post('/create-payment-session', async (req, res) => {
+    const { quantity, walletaddress, amount, productname } = req.body;
+    
+    try {
+        res.json({
+            success: true,
+            id: 'test_session_' + Date.now(),
+            orderid: 'order_' + Date.now(),
+            walletAddress: walletaddress,
+            quantity: quantity
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Calculate purchase pricing
+app.post('/calculate-purchase', (req, res) => {
+    const { msTokens } = req.body;
+    const quantity = parseInt(msTokens) || 1;
+    
+    const tokenValue = quantity * 1.00;
+    const stripeFee = (tokenValue * 0.029) + 0.30;
+    const mountainSharesFee = tokenValue * 0.02;
+    const totalCharge = tokenValue + stripeFee + mountainSharesFee;
+    
+    res.json({
+        success: true,
+        pricing: {
+            tokenValue: tokenValue,
+            stripeFee: stripeFee,
+            mountainSharesFee: mountainSharesFee,
+            totalCharge: totalCharge
+        }
+    });
+});
+
+// Create payment session endpoint
+app.post('/create-payment-session', async (req, res) => {
+    const { quantity, walletaddress, amount, productname } = req.body;
+    
+    try {
+        res.json({
+            success: true,
+            id: 'test_session_' + Date.now(),
+            orderid: 'order_' + Date.now(),
+            walletAddress: walletaddress,
+            quantity: quantity
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Stripe webhook handler that calls Customer Purchase System contract
+app.post('/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    
+    try {
+        const event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+        
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object;
+            
+            // Call your Customer Purchase System contract at 0x2a36e8775EbfaAb18E25Df81EF6Eab05E026f400
+            // This should mint tokens to session.customer_details.wallet_address
+            
+            console.log('Payment confirmed, calling Customer Purchase System...');
+        }
+        
+        res.json({ received: true });
+    } catch (err) {
+        console.error('Webhook error:', err.message);
+        res.status(400).send(`Webhook Error: ${err.message}`);
     }
 });
