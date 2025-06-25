@@ -11,22 +11,40 @@ app.use('/stripe-webhook', express.raw({ type: 'application/json' }));
 
 // Regular middleware for other routes
 app.use(express.json());
-app.use(cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true
-}));
+app.use(cors());
 
 // Serve static files
 app.use(express.static('.'));
 
-// Health check endpoint
+// Health check endpoint with contract info
 app.get('/health', (req, res) => {
-    res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+    res.json({ 
+        status: 'healthy',
+        contracts: {
+            token: '0xE8A9c6fFE6b2344147D886EcB8608C5F7863B20D',
+            purchase: '0x2a36e8775EbfaAb18E25Df81EF6Eab05E026f400',
+            vault: '0x95e4c1b6aad37e610742254114216ceaf0f49acd',
+            connected: !!process.env.STRIPE_SECRET_KEY
+        },
+        stripe: {
+            keyLoaded: !!process.env.STRIPE_SECRET_KEY,
+            keyPrefix: process.env.STRIPE_SECRET_KEY ? process.env.STRIPE_SECRET_KEY.substring(0, 12) + '...' : 'not set'
+        }
+    });
 });
 
-// Root endpoint
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+// Test Stripe connection
+app.get('/test-stripe', async (req, res) => {
+    try {
+        const prices = await stripe.prices.list({ limit: 1 });
+        res.json({ success: true, message: 'Stripe connection successful' });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            error: error.message,
+            type: error.type 
+        });
+    }
 });
 
 // Create Stripe checkout session
@@ -34,9 +52,9 @@ app.post('/create-checkout-session', async (req, res) => {
     try {
         const { amount, customerWallet } = req.body;
 
-        if (!amount || !customerWallet) {
+        if (!amount) {
             return res.status(400).json({ 
-                error: 'Missing required fields: amount and customerWallet' 
+                error: 'Missing required field: amount' 
             });
         }
 
@@ -46,26 +64,36 @@ app.post('/create-checkout-session', async (req, res) => {
                 price_data: {
                     currency: 'usd',
                     product_data: {
-                        name: 'Mountain Shares Purchase',
+                        name: '1 MountainShares',
+                        description: 'Digital currency for West Virginia communities',
                     },
-                    unit_amount: amount * 100, // Stripe expects cents
+                    unit_amount: Math.round(amount * 100), // Stripe expects cents
                 },
                 quantity: 1,
             }],
             mode: 'payment',
-            success_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/success?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/cancel`,
+            success_url: `https://mountainshares-backend-production.up.railway.app/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${req.headers.origin}/cancel`,
             metadata: {
-                customerWallet: customerWallet
+                totalPaid: amount.toString(),
+                tokenAmount: (amount * 0.98).toString(),
+                customerWallet: customerWallet || 'not_provided'
             }
         });
 
-        res.json({ sessionId: session.id, url: session.url });
+        res.json({ url: session.url });
     } catch (error) {
-        console.error('Stripe checkout session error:', error);
+        console.error('Error creating checkout session:', error);
+        console.error('Error details:', {
+            message: error.message,
+            type: error.type,
+            code: error.code,
+            statusCode: error.statusCode
+        });
         res.status(500).json({ 
             error: 'Failed to create checkout session',
-            details: process.env.NODE_ENV === 'development' ? error.message : undefined
+            message: error.message,
+            type: error.type
         });
     }
 });
@@ -130,8 +158,11 @@ app.get('/checkout-session/:sessionId', async (req, res) => {
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
-    console.log('Environment variables check:');
+    console.log('Environment check:');
     console.log('- STRIPE_SECRET_KEY:', process.env.STRIPE_SECRET_KEY ? '✅ Set' : '❌ Missing');
-    console.log('- FRONTEND_URL:', process.env.FRONTEND_URL || 'Using default');
-    console.log('- STRIPE_WEBHOOK_SECRET:', process.env.STRIPE_WEBHOOK_SECRET ? '✅ Set' : '⚠️ Not set (okay for development)');
+    console.log('- Frontend URL:', process.env.FRONTEND_URL || 'Using request origin');
+    
+    if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.includes('your_test_key_here')) {
+        console.log('⚠️  WARNING: Set real Stripe keys in Railway dashboard!');
+    }
 });
