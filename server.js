@@ -61,3 +61,43 @@ const PORT = process.env.PORT || 8080;
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`MountainShares backend running on port ${PORT}`);
 });
+
+// Stripe webhook endpoint (BEFORE express.json() middleware)
+app.post('/webhook/stripe', express.raw({type: 'application/json'}), (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET; // Get from Stripe Dashboard
+    
+    let event;
+    
+    try {
+        const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+        console.log('✅ Webhook signature verified');
+    } catch (err) {
+        console.log(`⚠️ Webhook signature verification failed.`, err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    // Handle MountainShares payment events
+    switch (event.type) {
+        case 'payment_intent.succeeded':
+            const payment = event.data.object;
+            console.log('🎉 MountainShares Payment succeeded:', payment.id);
+            
+            // TODO: Mint MountainShares tokens to customer wallet
+            // Wallet: payment.metadata.walletAddress
+            // Quantity: payment.metadata.quantity
+            
+            break;
+            
+        case 'checkout.session.completed':
+            const session = event.data.object;
+            console.log('🎊 MountainShares Purchase completed:', session.id);
+            break;
+            
+        default:
+            console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({received: true});
+});
