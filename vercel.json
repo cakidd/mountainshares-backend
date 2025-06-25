@@ -2,30 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "app.js",
+      "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
-      "src": "/health",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/create-checkout-session",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/success",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/cancel",
-      "dest": "/app.js"
-    },
-    {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/server.js"
     }
   ]
 }
