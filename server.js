@@ -2,6 +2,17 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
+// Force HTTPS in production (prevents Railway POST->GET conversion)
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.header('x-forwarded-proto') !== 'https') {
+            res.redirect(`https://${req.header('host')}${req.url}`);
+        } else {
+            next();
+        }
+    });
+}
+
 // Middleware
 app.use(express.json());
 app.use(cors({
@@ -18,7 +29,7 @@ app.get('/health', (req, res) => {
     });
 });
 
-// Calculate purchase pricing
+// Calculate purchase pricing - MUST be before any wildcard routes
 app.post('/calculate-purchase', (req, res) => {
     const { msTokens } = req.body;
     const quantity = parseInt(msTokens) || 1;
@@ -39,7 +50,7 @@ app.post('/calculate-purchase', (req, res) => {
     });
 });
 
-// Create payment session
+// Create payment session - MUST be before any wildcard routes  
 app.post('/create-payment-session', async (req, res) => {
     const { quantity, walletaddress, amount, productname } = req.body;
     
