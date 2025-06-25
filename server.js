@@ -56,8 +56,8 @@ app.post('/create-payment-session', async (req, res) => {
     }
 });
 
-// Start server
+// CRITICAL: Bind to 0.0.0.0 for Railway external connections
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+app.listen(PORT, "0.0.0.0", () => {
     console.log(`MountainShares backend running on port ${PORT}`);
 });
