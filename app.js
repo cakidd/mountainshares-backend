@@ -3,7 +3,7 @@
  * ---------------------------------
  * • Single Express app exported for Vercel Serverless Functions
  * • CORS whitelist so the browser can call the API
- * • Health check + Stripe checkout route
+	 * • Health check + Stripe checkout route
  */
 
 require('dotenv').config();
@@ -57,7 +57,6 @@ app.get('/health', (_req, res) => {
    ──────────────────────────────── */
 app.post('/create-checkout-session', async (req, res) => {
   try {
-    const { amount, customerWallet, email } = req.body;
     if (!amount || !email) {
       return res.status(400).json({ success: false, message: 'amount & email required' });
     }
