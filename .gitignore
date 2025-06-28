@@ -3,3 +3,4 @@ node_modules/
 .vercel
 .env.production.local
 .env*.local
+server_broken.js
