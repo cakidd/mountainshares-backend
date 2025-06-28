@@ -950,7 +950,7 @@
         console.log('🏔️ THE COMMONS BUSINESS NETWORK LOADING 🏔️');
 
         // BACKEND CONFIGURATION
-        const BACKEND_URL = 'https://mountainshares-production.up.railway.app';
+        const BACKEND_URL = 'https://mountainshares-api-only-42blmxm9u-cakidds-projects.vercel.app';
         
         // CONTRACT CONFIGURATION
         const CONFIG = {
