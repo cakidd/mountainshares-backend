@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const cors = require('cors');
@@ -218,5 +219,15 @@ app.listen(PORT, () => {
         console.log('⚠️  Set it with: railway variables --set STRIPE_SECRET_KEY=sk_live_...');
     }
 });
+
+if (require.main === module) {
+  // launched with `node app.js`  → development mode
+  app.listen(process.env.PORT || 3000, () =>
+    console.log(`🏔️  Server running on port ${process.env.PORT || 3000}`)
+  );
+}
+
+module.exports = app;   // always export the app
+
 
 // FORCE FRESH DEPLOY Tue Jun 24 21:13:49 EDT 2025

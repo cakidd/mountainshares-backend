@@ -6,3 +6,5 @@ export default async function handler(req, res) {
     bridgeStatus: 'READY'
   });
 }
+const app = require('../app');   // your existing Express app (with routes, middleware, etc.)
+module.exports = app;            // IMPORTANT: do NOT call app.listen() here
