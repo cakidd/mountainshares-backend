@@ -8,21 +8,18 @@ importers:
 
   .:
     dependencies:
-      '@types/micro':
-        specifier: ^10.0.0
-        version: 10.0.0
       micro:
         specifier: ^10.0.1
         version: 10.0.1
       stripe:
-        specifier: ^12.0.0
-        version: 12.18.0
+        specifier: ^18.3.0
+        version: 18.3.0(@types/node@24.0.10)
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.10
+        version: 24.0.10
 
 packages:
-
-  '@types/micro@10.0.0':
-    resolution: {integrity: sha512-B+HYcRE0mCFPK5dTv4Gjh8p3VoobFqwtnv5EOdQvrKJ5OXaOKFd+FEoCiCvmFVD/5vI1M9VJJCdBKO/dMJCtuA==}
-    deprecated: This is a stub types definition. micro provides its own type definitions, so you do not need this installed.
 
   '@types/node@24.0.10':
     resolution: {integrity: sha512-ENHwaH+JIRTDIEEbDK6QSQntAYGtbvdDXnMXnZaZ6k13Du1dPMmprkEHIL7ok2Wl2aZevetwTAb5S+7yIF+enA==}
@@ -147,9 +144,14 @@ packages:
     resolution: {integrity: sha512-OpZ3zP+jT1PI7I8nemJX4AKmAX070ZkYPVWV/AaKTJl+tXCTGyVdC1a4SL8RUQYEwk/f34ZX8UTykN68FwrqAA==}
     engines: {node: '>= 0.6'}
 
-  stripe@12.18.0:
-    resolution: {integrity: sha512-cYjgBM2SY/dTm8Lr6eMyyONaHTZHA/QjHxFUIW5WH8FevSRIGAVtXEmBkUXF1fsqe7QvvRgQSGSJZmjDacegGg==}
+  stripe@18.3.0:
+    resolution: {integrity: sha512-FkxrTUUcWB4CVN2yzgsfF/YHD6WgYHduaa7VmokCy5TLCgl5UNJkwortxcedrxSavQ8Qfa4Ir4JxcbIYiBsyLg==}
     engines: {node: '>=12.*'}
+    peerDependencies:
+      '@types/node': '>=12.x.x'
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
 
   toidentifier@1.0.0:
     resolution: {integrity: sha512-yaOH/Pk/VEhBWWTlhI+qXxDFXlejDGcQipMlyxda9nthulaxLZUNcUqFxokp0vcYnvteJln5FNQDRrxj3YcbVw==}
@@ -163,10 +165,6 @@ packages:
     engines: {node: '>= 0.8'}
 
 snapshots:
-
-  '@types/micro@10.0.0':
-    dependencies:
-      micro: 10.0.1
 
   '@types/node@24.0.10':
     dependencies:
@@ -301,10 +299,11 @@ snapshots:
 
   statuses@1.5.0: {}
 
-  stripe@12.18.0:
+  stripe@18.3.0(@types/node@24.0.10):
     dependencies:
-      '@types/node': 24.0.10
       qs: 6.14.0
+    optionalDependencies:
+      '@types/node': 24.0.10
 
   toidentifier@1.0.0: {}
 
