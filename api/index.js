@@ -1,4 +1,5 @@
-export default async function handler(req, res) {
+if (!process.env.VERCEL) { require("dotenv").config(); }
+module.exports = async function handler(req, res) {
   return res.json({ 
     status: 'STRIPE-TO-CONTRACT BRIDGE ACTIVE',
     contractReady: true,
