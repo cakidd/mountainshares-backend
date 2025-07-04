@@ -4,3 +4,6 @@ node_modules/
 .env.production.local
 .env*.local
 server_broken.js
+
+# Local Netlify folder
+.netlify

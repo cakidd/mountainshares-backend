@@ -1,0 +1,13 @@
+{
+  "name": "mountainshares-backend",
+  "version": "1.0.0",
+  "description": "MountainShares Backend API",
+  "main": "index.js",
+  "dependencies": {
+    "micro": "^10.0.1"
+  },
+  "engines": {
+    "node": "18.x"
+  },
+  "type": "module"
+}

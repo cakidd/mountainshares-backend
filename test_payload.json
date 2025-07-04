@@ -1,0 +1,17 @@
+{
+  "id": "evt_test_mountainshares",
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_mountainshares_100",
+      "amount_total": 10200,
+      "customer": "cus_test_mountainshares",
+      "customer_details": {
+        "email": "test@mountainshares.com"
+      },
+      "metadata": {
+        "tokens_purchase": "100"
+      }
+    }
+  }
+}
