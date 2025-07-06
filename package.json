@@ -2,21 +2,10 @@
   "name": "mountainshares-backend",
   "version": "1.0.0",
   "description": "MountainShares Backend API",
-  "main": "api/index.js",
   "scripts": {
-    "start": "node api/index.js",
-    "build": "mkdir -p public && echo 'API-only project' > public/.gitkeep",
-    "test": "echo 'No tests specified'"
+    "build": "mkdir -p public && echo 'API-only project' > public/.gitkeep"
   },
   "dependencies": {
-    "@stripe/stripe-js": "^7.4.0",
-    "dotenv": "^16.0.0",
-    "micro": "^10.0.1",
-    "react-router-dom": "^6.30.1",
     "stripe": "^14.0.0"
-  },
-  "engines": {
-    "node": "18.x"
-  },
-  "type": "module"
+  }
 }
