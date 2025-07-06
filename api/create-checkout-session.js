@@ -9,14 +9,13 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
 
-module.exports = async (req, res) => {
+module.exports = (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', 'https://www.mountainshares.us');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept');
   res.setHeader('Access-Control-Allow-Credentials', 'false');
   if (req.method === 'OPTIONS') return res.status(204).end();
-  // ...your Stripe logic here...
-  res.status(200).json({ success: true, message: "Stripe handler placeholder" });
+  res.status(200).json({ success: true, message: "Minimal handler works!" });
 };
 
   if (req.method !== 'POST') {
