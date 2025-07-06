@@ -2,13 +2,16 @@
 
 import Stripe from 'stripe';
 
+// api/create-checkout-session.js
+
+const Stripe = require('stripe');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2023-10-16'
 });
 
 const allowedOrigin = 'https://www.mountainshares.us';
 
-export default async function handler(req, res) {
+module.exports = async (req, res) => {
   // Set CORS headers for all requests
   res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -25,7 +28,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { amount, governance_fee, reinforcement_fee, wallet_address } = req.body;
+    const { amount, governance_fee, reinforcement_fee, wallet_address } = req.body || {};
 
     if (!amount || amount < 1) {
       return res.status(400).json({ error: 'Invalid amount' });
@@ -87,4 +90,4 @@ export default async function handler(req, res) {
       success: false
     });
   }
-}
+};
