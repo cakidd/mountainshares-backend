@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="description" content="MountainShares - West Virginia Digital Business Revolution" />
+    <title>The Commons - MountainShares</title>
+    
+    
+</head>
+<body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+    
+    <script>
+        console.log('🏔️ THE COMMONS BUSINESS NETWORK LOADING 🏔️');
+        
+        // Ensure libraries are loaded
+        window.addEventListener('load', function() {
+            if (typeof Stripe !== 'undefined') {
+            
+            if (typeof ethers !== 'undefined') {
+            
+            // Set correct backend URL
+            window.MOUNTAINSHARES_BACKEND_URL = 'https://mountainshares-backend-qbkfut42o-mountainshares-team.vercel.app';
+            console.log('Backend URL:', window.MOUNTAINSHARES_BACKEND_URL);
+            
+            console.log('🏔️ THE COMMONS - MOUNTAINSHARES WEBSITE READY 🏔️');
+        });
+    </script>
+</body>
+</html>
